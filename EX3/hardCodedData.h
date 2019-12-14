@@ -31,3 +31,7 @@ static const char END_OF_STR = '\0';
 #define MAX_NUM_OF_ROOMS 5
 #define MAX_NUM_OF_GUESTS 15
 #define MAX_LINE_LENGTH 50
+#define GUEST_WAIT 0
+#define GUEST_REGISTERED 1
+#define GUEST_CHECK_OUT 2
+#define GUEST_LEFT 3
