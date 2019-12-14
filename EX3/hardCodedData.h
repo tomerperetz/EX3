@@ -14,11 +14,14 @@ Hard coded data: includes and defines
 #include <stdio.h>	
 #include <string.h>
 #include <windows.h>
+#include <sys/stat.h>
+
 #include "argparser.h"
 #include "lib_errorHandler.h"
 #include "lib_osHandler.h"
 #include "lib_str_func.h"
-#include <sys/stat.h>
+#include "hotel_manager.h"
+
 
 // Consts ----------------------------------------------------->
 static const int ERR = -1;

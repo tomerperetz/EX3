@@ -20,6 +20,7 @@ typedef struct _guest_struct
 	int ID;
 	int room_number;
 	int status;
+	int budget;
 } guest_struct;
 
 typedef struct _hotel_room_struct
