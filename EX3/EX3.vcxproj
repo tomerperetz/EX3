@@ -21,12 +21,14 @@
   <ItemGroup>
     <ClInclude Include="argparser.h" />
     <ClInclude Include="hardCodedData.h" />
+    <ClInclude Include="hotel_manager.h" />
     <ClInclude Include="lib_errorHandler.h" />
     <ClInclude Include="lib_osHandler.h" />
     <ClInclude Include="lib_str_func.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="argparser.c" />
+    <ClCompile Include="hotel_manager.c" />
     <ClCompile Include="lib_errorHandler.c" />
     <ClCompile Include="lib_osHandler.c" />
     <ClCompile Include="lib_str_func.c" />

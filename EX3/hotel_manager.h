@@ -12,27 +12,32 @@ Caculate student grade main functions
 #pragma once
 #include "hardCodedData.h"
 
-// Structs ---------------------------------------------------------------------------------------------------------
+// Defines  --------------------------------------------------------------------------------------------------------
+#define MAX_GUEST_NAME_LEN 20
+#define MAX_ROOM_NAME_LEN 20
 
-typedef struct _guest_struct
+
+// Structs ---------------------------------------------------------------------------------------------------------
+typedef struct _Guest_struct
 {
-	char *name[MAX_GUEST_NAME_LEN];
+	char name[MAX_GUEST_NAME_LEN];
 	int ID;
 	int room_number;
 	int status;
 	int budget;
-} guest_struct;
+	int total_number_of_nights;
+} Guest_struct;
 
-typedef struct _hotel_room_struct
+typedef struct _Room_struct
 {
-	char *name[MAX_GUEST_NAME_LEN];
+	char name[MAX_ROOM_NAME_LEN];
 	int ID;
 	int price_pp;
 	int capacity;
 	int availablity;
 	int next_day_availablity;
 	int waiting_guest_counter;
-} hotel_room_struct;
+} Room_struct;
 
 // Declerations ---------------------------------------------------------------------------------------------------
 

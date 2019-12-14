@@ -25,6 +25,6 @@ int main(int argc, char *argv[])
 		return TRUE;
 	}
 
-	printf("done\n");
+	printf("Program ended successfully!\n");
 	return FALSE;
 }
