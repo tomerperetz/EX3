@@ -36,21 +36,21 @@ void printRoomStruct()
 	int idx = 0;
 	for (idx = 0; idx < num_of_rooms; idx++) {
 
-		printf("*******************************\n");
-		printf("| Room Name:        | %s\n", room_arr[idx].name);
-		printf("*******************************\n");
-		printf("| Room Price:      | %d\n", room_arr[idx].price_pp);
-		printf("-------------------------------\n");
-		printf("| Room Capacity:      | %d\n", room_arr[idx].capacity);
-		printf("-------------------------------\n");
-		printf("| Room ID:          | %d\n", room_arr[idx].ID);
-		printf("-------------------------------\n");
-		printf("| Room Room #:      | %d\n", room_arr[idx].availablity);
-		printf("-------------------------------\n");
-		printf("| Room Status       | %d\n", room_arr[idx].next_day_availablity);
-		printf("-------------------------------\n");
-		printf("| Room Status       | %d\n", room_arr[idx].waiting_guest_counter);
-		printf("-------------------------------\n");
+		printf("***********************************************\n");
+		printf("| Room Name:                    | %s\n", room_arr[idx].name);
+		printf("***********************************************\n");
+		printf("| Room Price:                   | %d\n", room_arr[idx].price_pp);
+		printf("-----------------------------------------------\n");
+		printf("| Room Capacity:                | %d\n", room_arr[idx].capacity);
+		printf("-----------------------------------------------\n");
+		printf("| Room ID:                      | %d\n", room_arr[idx].ID);
+		printf("-----------------------------------------------\n");
+		printf("| Room Availabilty #:           | %d\n", room_arr[idx].availablity);
+		printf("-----------------------------------------------\n");
+		printf("| Room next day Availabilty     | %d\n", room_arr[idx].next_day_availablity);
+		printf("-----------------------------------------------\n");
+		printf("| Room waiting list counter     | %d\n", room_arr[idx].waiting_guest_counter);
+		printf("-----------------------------------------------\n");
 	}
 	printf("Total number of Rooms: %d\n", num_of_rooms);
 }
@@ -83,7 +83,7 @@ int readRoomFile(char dir_path[])
 		room_arr[num_of_rooms].price_pp = price;
 		room_arr[num_of_rooms].capacity = capacity;
 		room_arr[num_of_rooms].availablity = capacity;
-		room_arr[num_of_rooms].next_day_availablity = capacity;
+		room_arr[num_of_rooms].next_day_availablity = 0;
 		room_arr[num_of_rooms].ID = num_of_rooms;
 		room_arr[num_of_rooms].waiting_guest_counter = 0;
 		num_of_rooms++;
@@ -173,6 +173,7 @@ int readGuestFile(char dir_path[], Guest_struct guest_arr[MAX_NUM_OF_GUESTS])
 		guest_arr[num_of_guests].room_number = -1;
 		guest_arr[num_of_guests].status = GUEST_WAIT;
 		guest_arr[num_of_guests].total_number_of_nights = 0;
+		guest_arr[num_of_guests].check_in_day = -1;
 
 		num_of_guests += 1;
 	}
@@ -229,16 +230,18 @@ int getRoomForGuest(Guest_struct *p_guest)
 {
 	/* Init room type for customer according to his budget */
 	extern Room_struct room_arr[MAX_NUM_OF_ROOMS];
+	extern int num_of_rooms;
+	extern int day_counter;
 
-	for (int i = 0; i < MAX_NUM_OF_ROOMS; i++)
+	for (int i = 0; i < num_of_rooms; i++)
 	{
 		if ((p_guest->budget % room_arr[i].price_pp) == 0)
 		{
 			p_guest->room_number = i;
-			printf("customer room is: %s, he has the budget of: %d\n", p_guest->name, p_guest->budget);
+			p_guest->total_number_of_nights = (p_guest->budget / room_arr[i].price_pp);
+			p_guest->check_in_day = day_counter;
 			return TRUE;
 		}
-		printf("customer didn't get room: %s, he has the budget of: %d\n", p_guest->name, p_guest->budget);
 	}
 	return FALSE;
 }
@@ -306,7 +309,7 @@ int registerRoom(Guest_struct *p_guest)
 
 int CheckIn(Guest_struct *p_guest)
 {
-	if (p_guest->room_number != ERR)
+	if (p_guest->room_number == ERR)
 	{
 		/* search room for guest */
 		if (getRoomForGuest(p_guest) != TRUE)
@@ -322,9 +325,8 @@ int CheckIn(Guest_struct *p_guest)
 	/* try to register room to guest */
 	if (registerRoom(p_guest) != TRUE)
 	{
-		/* couldn't check customer in */
+		printf("some error in register room\n");
 	}
-
 
 	return TRUE;
 }

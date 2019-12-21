@@ -32,6 +32,7 @@ typedef struct _Guest_struct
 	int status;
 	int budget;
 	int total_number_of_nights;
+	int check_in_day;
 } Guest_struct;
 
 typedef struct _Room_struct
@@ -52,3 +53,12 @@ int readGuestFile(char dir_path[], Guest_struct guest_arr[MAX_NUM_OF_GUESTS]);
 int readRoomFile(char dir_path[]);
 int getGuestDataFromLine(char *line, char guest_name[], int *budget);
 int getRoomDataFromLine(char *line, char room_name[], int *price, int *capacity);
+
+int getRoomForGuest(Guest_struct *p_guest);
+int isRoomAvaiable(Room_struct p_room);
+int updateBudget(Guest_struct *p_guest);
+int updateRoomAvaiabilty(Guest_struct *p_guest);
+int updateCustomerStatus(Guest_struct *p_guest, int status);
+int guestCheckInProcedure(Guest_struct *p_guest);
+int registerRoom(Guest_struct *p_guest);
+int CheckIn(Guest_struct *p_guest);

@@ -23,6 +23,7 @@ int main(int argc, char *argv[])
 {
 	Guest_struct guest_arr[MAX_NUM_OF_GUESTS];
 	extern int num_of_guests;
+
 	int idx = 0;
 	// Checks whether the given arguments are valid  
 	if (ensureArgs(argc, EXPECTED_ARGC, argv) != TRUE) {
@@ -36,8 +37,18 @@ int main(int argc, char *argv[])
 	if (readRoomFile(argv[1]) != TRUE) {
 		return TRUE;
 	}
+	printf("\n\n=========================BEFORE===============================\n\n");
 	printRoomStruct();
-
+	printGuestStruct(guest_arr);
+	printf("\n\n=========================BEFORE===============================\n\n");
+	for (idx = 0; idx < num_of_guests; idx++)
+	{
+		CheckIn(&guest_arr[idx]);
+	}
+	printf("\n\n=========================AFTER===============================\n\n");
+	printRoomStruct();
+	printGuestStruct(guest_arr);
+	printf("\n\n=========================AFTER===============================\n\n");
 	printf("Program ended successfully!\n");
 	return FALSE;
 }
