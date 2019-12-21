@@ -21,6 +21,9 @@
     <ClInclude Include="hardCodedData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="hotel_manager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="lib_errorHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -30,12 +33,12 @@
     <ClInclude Include="lib_str_func.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="hotel_manager.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="argparser.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hotel_manager.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="lib_errorHandler.c">
@@ -48,9 +51,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="main.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="hotel_manager.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
