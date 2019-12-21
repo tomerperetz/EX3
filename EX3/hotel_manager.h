@@ -46,9 +46,9 @@ typedef struct _Room_struct
 } Room_struct;
 
 // Declerations ---------------------------------------------------------------------------------------------------
-void printGuestStruct(Guest_struct p_guest_arr[MAX_NUM_OF_GUESTS]);
+void printGuestStruct(Guest_struct guest_arr[MAX_NUM_OF_GUESTS]);
 void printRoomStruct();
-int readGuestFile(char dir_path[], Guest_struct p_guest_arr[MAX_NUM_OF_GUESTS]);
+int readGuestFile(char dir_path[], Guest_struct guest_arr[MAX_NUM_OF_GUESTS]);
 int readRoomFile(char dir_path[]);
 int getGuestDataFromLine(char *line, char guest_name[], int *budget);
 int getRoomDataFromLine(char *line, char room_name[], int *price, int *capacity);

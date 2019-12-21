@@ -1,35 +1,36 @@
 #include "hotel_manager.h"
 
-// global variables -------------------------------------------------------------------------------------->
+// Global variables -------------------------------------------------------------------------------------->
 Room_struct room_arr[MAX_NUM_OF_ROOMS];
 int day_counter = 1;
 int num_of_guests = 0;
 int num_of_rooms = 0;
 
 
-void printGuestStruct(Guest_struct p_guest_arr[MAX_NUM_OF_GUESTS]) {
+void printGuestStruct(Guest_struct guest_arr[MAX_NUM_OF_GUESTS]) {
 	extern int num_of_guests;
 	int idx = 0;
 	for (idx = 0; idx < num_of_guests; idx++) {
 		
 		printf("*******************************\n");
-		printf("| Guest Name:        | %s\n", p_guest_arr[idx].name);
+		printf("| Guest Name:        | %s\n", guest_arr[idx].name);
 		printf("*******************************\n");
-		printf("| Guest Budget:      | %d\n", p_guest_arr[idx].budget);
+		printf("| Guest Budget:      | %d\n", guest_arr[idx].budget);
 		printf("-------------------------------\n");
-		printf("| Guest ID:          | %d\n", p_guest_arr[idx].ID);
+		printf("| Guest ID:          | %d\n", guest_arr[idx].ID);
 		printf("-------------------------------\n");
-		printf("| Guest Room #:      | %d\n", p_guest_arr[idx].room_number);
+		printf("| Guest Room #:      | %d\n", guest_arr[idx].room_number);
 		printf("-------------------------------\n");
-		printf("| Guest Status       | %d\n", p_guest_arr[idx].status);
+		printf("| Guest Status       | %d\n", guest_arr[idx].status);
 		printf("-------------------------------\n");
-		printf("| Gueat Tot # nights:| %d\n", p_guest_arr[idx].total_number_of_nights);
+		printf("| Gueat Tot # nights:| %d\n", guest_arr[idx].total_number_of_nights);
 		printf("-------------------------------\n");
 	}
 	printf("Total number of Guests: %d\n", num_of_guests);
 }
 
-void printRoomStruct() {
+void printRoomStruct() 
+{
 	extern Room_struct room_arr[MAX_NUM_OF_ROOMS];
 	extern int num_of_rooms;
 	int idx = 0;
@@ -53,7 +54,9 @@ void printRoomStruct() {
 	}
 	printf("Total number of Rooms: %d\n", num_of_rooms);
 }
-int readRoomFile(char dir_path[]) {
+
+int readRoomFile(char dir_path[]) 
+{
 	extern Room_struct room_arr[MAX_NUM_OF_ROOMS];
 	extern int num_of_rooms;
 	FILE *fp = NULL;
@@ -94,7 +97,8 @@ int readRoomFile(char dir_path[]) {
 	return ret_val;
 }
 
-int getRoomDataFromLine(char *line, char room_name[], int *price, int *capacity) {
+int getRoomDataFromLine(char *line, char room_name[], int *price, int *capacity)
+{
 	char space = ' ', price_str[MAX_LINE_LENGTH], capacity_str[MAX_LINE_LENGTH];
 	int line_len = 0, idx = 0, price_idx = 0;
 	if (line == NULL) {
@@ -137,7 +141,7 @@ int getRoomDataFromLine(char *line, char room_name[], int *price, int *capacity)
 	return TRUE;
 }
 
-int readGuestFile(char dir_path[], Guest_struct p_guest_arr[MAX_NUM_OF_GUESTS])
+int readGuestFile(char dir_path[], Guest_struct guest_arr[MAX_NUM_OF_GUESTS])
 {
 	extern int num_of_guests;
 	int idx = 0, budget = 0, ret_val = TRUE;
@@ -163,12 +167,12 @@ int readGuestFile(char dir_path[], Guest_struct p_guest_arr[MAX_NUM_OF_GUESTS])
 			break;
 		}
 		
-		p_guest_arr[num_of_guests].budget = budget;
-		strcpy_s(p_guest_arr[num_of_guests].name, MAX_GUEST_NAME_LEN, guest_name);
-		p_guest_arr[num_of_guests].ID = num_of_guests;
-		p_guest_arr[num_of_guests].room_number = -1;
-		p_guest_arr[num_of_guests].status = GUEST_WAIT;
-		p_guest_arr[num_of_guests].total_number_of_nights = 0;
+		guest_arr[num_of_guests].budget = budget;
+		strcpy_s(guest_arr[num_of_guests].name, MAX_GUEST_NAME_LEN, guest_name);
+		guest_arr[num_of_guests].ID = num_of_guests;
+		guest_arr[num_of_guests].room_number = -1;
+		guest_arr[num_of_guests].status = GUEST_WAIT;
+		guest_arr[num_of_guests].total_number_of_nights = 0;
 
 		num_of_guests += 1;
 	}
@@ -181,14 +185,15 @@ int readGuestFile(char dir_path[], Guest_struct p_guest_arr[MAX_NUM_OF_GUESTS])
 	return ret_val;
 }
 
-int getGuestDataFromLine(char *line, char guest_name[], int *budget) {
+int getGuestDataFromLine(char *line, char guest_name[], int *budget)
+{
 	char space = ' ', budget_str[MAX_LINE_LENGTH];
 	int line_len = 0, idx = 0, budget_idx = 0;
 	if (line == NULL) {
 		raiseError(10, __FILE__, __func__, __LINE__, "Guest Name File has an invalid line");
 		return ERR;
 	}
-	
+
 	line_len = strlen(line);
 	while ((idx < line_len) && line[idx] != space) {
 		guest_name[idx] = line[idx];
@@ -208,7 +213,173 @@ int getGuestDataFromLine(char *line, char guest_name[], int *budget) {
 	}
 	budget_str[budget_idx] = END_OF_STR;
 	*budget = atoi(budget_str);
-	
+
 	return TRUE;
+}
+
+
+// Functions --------------------------------------------------------------------------------------------->
+/*
+===================================================================================================================
+											Check customer in - START
+===================================================================================================================
+*/
+
+int getRoomForGuest(Guest_struct *p_guest)
+{
+	/* Init room type for customer according to his budget */
+	extern Room_struct room_arr[MAX_NUM_OF_ROOMS];
+
+	for (int i = 0; i < MAX_NUM_OF_ROOMS; i++)
+	{
+		if ((p_guest->budget % room_arr[i].price_pp) == 0)
+		{
+			p_guest->room_number = i;
+			printf("customer room is: %s, he has the budget of: %d\n", p_guest->name, p_guest->budget);
+			return TRUE;
+		}
+		printf("customer didn't get room: %s, he has the budget of: %d\n", p_guest->name, p_guest->budget);
+	}
+	return FALSE;
+}
+
+int isRoomAvaiable(Room_struct p_room)
+{
+	/* Check if room is currently avaiable */
+	if (p_room.availablity > 0)
+		return TRUE;
+	return FALSE;
+}
+
+int updateBudget(Guest_struct *p_guest)
+{
+	/* decrease customer budget */
+	extern Room_struct room_arr[MAX_NUM_OF_ROOMS];
+	p_guest->budget = p_guest->budget - room_arr[p_guest->room_number].price_pp;
+	return TRUE;
+}
+
+int updateRoomAvaiabilty(Guest_struct *p_guest)
+{
+	extern Room_struct room_arr[MAX_NUM_OF_ROOMS];
 	
+	/* Update for tonight */
+	room_arr[p_guest->room_number].availablity--;
+	if (p_guest->budget==0)
+		room_arr[p_guest->room_number].next_day_availablity++;
+	return TRUE;
+}
+
+int updateCustomerStatus(Guest_struct *p_guest, int status)
+{
+	p_guest->status = status;
+	return TRUE;
+}
+
+int guestCheckInProcedure(Guest_struct *p_guest)
+{
+	/* Update: room avaiablity, room avaiablity next day, customer budget, customer status */
+	/* update budget */
+	updateBudget(p_guest);
+	updateCustomerStatus(p_guest, GUEST_REGISTERED);
+	updateRoomAvaiabilty(p_guest);
+	return TRUE;
+}
+
+int registerRoom(Guest_struct *p_guest)
+{ 
+	/* Need to wrap with mutex */
+	extern Room_struct room_arr[MAX_NUM_OF_ROOMS];
+
+	/* check if room currently avaiable */
+	if (isRoomAvaiable(room_arr[p_guest->room_number]))
+		/* Check customer in */
+		if (guestCheckInProcedure(p_guest)!=TRUE)
+		{
+			printf("Couldn't check customer in.\n");
+			printf("Name: %s\nRoom: %s\nPrice: %d\nBudget: %d\n", p_guest->name, room_arr[p_guest->room_number].name, room_arr[p_guest->room_number].price_pp, p_guest->budget);
+			raiseError(7, __FILE__, __func__, __LINE__, ERROR_ID_7_OTHER);
+			return ERR;
+		}
+	return TRUE;
+}
+
+int CheckIn(Guest_struct *p_guest)
+{
+	/* search room for guest */
+	if (getRoomForGuest(p_guest) != TRUE)
+	{
+		printf("Couldn't allocate room to this guest! please update his budget.\n");
+		printf("Name: %s\nRoom: %s\nPrice: %d\nBudget: %d", p_guest->name, room_arr[p_guest->room_number].name, room_arr[p_guest->room_number].price_pp, p_guest->budget);
+		raiseError(7, __FILE__, __func__, __LINE__, ERROR_ID_7_OTHER);
+		return ERR;
+	}	
+	/* try to register room to guest */
+	if (registerRoom(p_guest) != TRUE)
+	{
+		/* couldn't check customer in */
+	}
+
+
+	return TRUE;
+}
+
+/*
+===================================================================================================================
+											Check customer in - END
+===================================================================================================================
+*/
+
+
+/*
+===================================================================================================================
+											One more night - START
+===================================================================================================================
+*/
+
+
+
+/*
+===================================================================================================================
+											One more night in - END
+===================================================================================================================
+*/
+
+
+
+
+
+/* DEMO ----------------------------------------------------------------------------------------------------------------------------> */
+
+int demoRoomsStruct()
+{
+	extern Room_struct room_arr[MAX_NUM_OF_ROOMS];
+	Guest_struct guest_1, guest_2;
+	printf("working\n");
+	for (int i = 0; i < MAX_NUM_OF_ROOMS; i++)
+	{
+		room_arr[i].availablity = i + 1;
+		room_arr[i].capacity = i + 1;
+		room_arr[i].ID = i;
+		strcpy_s(room_arr[i].name,8,"my_room");
+		room_arr[i].next_day_availablity = 0;
+		room_arr[i].price_pp = 30;
+		room_arr[i].waiting_guest_counter = 0;
+	}
+
+	guest_1.budget = 90;
+	guest_1.ID = 1;
+	guest_1.room_number = -1;
+	guest_1.status = GUEST_WAIT;
+	guest_1.total_number_of_nights = 0;
+	strcpy_s(guest_1.name, 8, "tomer");
+
+	guest_2.budget = 95;
+	guest_2.ID = 2;
+	guest_2.room_number = -2;
+	guest_2.status = GUEST_WAIT;
+	guest_2.total_number_of_nights = 0;
+	strcpy_s(guest_2.name, 8, "segev");
+
+	return TRUE;
 }
