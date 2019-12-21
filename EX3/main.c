@@ -15,16 +15,33 @@ Register people to rooms according to budget. print out a log of when people che
 
 // Includes --------------------------------------------------------------------
 #include "hardCodedData.h"
+
 Guest_struct guest_arr[MAX_NUM_OF_GUESTS];
+char **g_argv;
+
 
 // Functions --------------------------------------------------------------------
+int checkWaitList(Guest_struct **guest_arr)
+{
+	extern int num_of_guests;
+	int wait_list = 0;
+	for (int idx = 0; idx < num_of_guests; idx++)
+	{
+		if (guest_arr[idx]->status == GUEST_WAIT)
+			wait_list += 1;
+	}
+	return wait_list;
+}
 
 int main(int argc, char *argv[])
 {
 	extern Guest_struct guest_arr[MAX_NUM_OF_GUESTS];
 	extern int num_of_guests;
-
+	int wait_list = 0;
 	int idx = 0;
+	extern char **g_argv;
+	g_argv = argv;
+
 	// Checks whether the given arguments are valid  
 	if (ensureArgs(argc, EXPECTED_ARGC, argv) != TRUE) {
 		raiseError(1, __FILE__, __func__, __LINE__, ERROR_ID_1_ARGS);
@@ -33,14 +50,11 @@ int main(int argc, char *argv[])
 	if (readGuestFile(argv[1], guest_arr) != TRUE) {
 		return TRUE;
 	}
-	//printGuestStruct(guest_arr);
+	// PrintGuestStruct(guest_arr);
 	if (readRoomFile(argv[1]) != TRUE) {
 		return TRUE;
 	}
-	//printf("\n\n=========================BEFORE===============================\n\n");
-	//printRoomStruct();
-	//printGuestStruct(guest_arr);
-	//printf("\n\n=========================BEFORE===============================\n\n");
+
 	runHotelWithThreads(&guest_arr);
 	printf("\n\n=========================AFTER===============================\n\n");
 	printRoomStruct();
@@ -48,5 +62,6 @@ int main(int argc, char *argv[])
 	printf("\n\n=========================AFTER===============================\n\n");
 
 	printf("Program ended successfully!\n");
-	return FALSE;
+
+	return 0;
 }

@@ -8,20 +8,9 @@ int day_counter = 1;
 int num_of_guests = 0;
 int num_of_rooms = 0;
 
-int hotelManager(LPVOID idx)
-{
-	//Sleep(10);
-	
-	extern Guest_struct guest_arr[MAX_NUM_OF_GUESTS];
-	int guest_idx = 0;
-	//if (p_params == NULL)
-	//	return ERR;
-	guest_idx = (int) idx;
-	printf("Guest idx: %d\n", guest_idx);
-	if (CheckIn(&guest_arr[guest_idx]) != TRUE)
-		return ERR;
-	return TRUE;
-}
+
+// Functions ------------------------------------------------------------------------------------------------------>
+
 int checkWaitCodeStatus(DWORD wait_code) {
 	int retVal1 = ERR;
 	DWORD errorMessageID;
@@ -51,6 +40,7 @@ int checkWaitCodeStatus(DWORD wait_code) {
 	}
 	return retVal1;
 }
+
 int createRoomMutex()
 {
 	int retVal1 = TRUE;
@@ -418,7 +408,102 @@ static HANDLE CreateThreadSimple(LPTHREAD_START_ROUTINE p_start_routine,
 	return thread_handle;
 }
 
-// Functions --------------------------------------------------------------------------------------------->
+
+/*
+===================================================================================================================
+											File handler - START
+===================================================================================================================
+*/
+
+int writeMessegeBuffer(Guest_struct *p_guest, char *buffer, int max_size, char *mode)
+{
+	extern int day_counter;
+	extern Room_struct room_arr[MAX_NUM_OF_ROOMS];
+
+
+	sprintf_s(buffer, max_size, "%s %s %s %d\n", room_arr[p_guest->room_number].name, p_guest->name, mode, day_counter);
+	return TRUE;
+}
+
+int fileExist(char *filename)
+{
+	struct stat buffer;
+	if (stat(filename, &buffer) == 0)
+		return FALSE;
+	return TRUE;
+}
+
+int writeToLog(char *output_dir_path, char *content)
+{
+	FILE *fp = NULL;
+	char *file_path = NULL;
+	char file_name[12] = "roomLog.txt";
+	int file_exist = 0;
+	if (strcatDynamic(output_dir_path, file_name, &file_path) != TRUE)
+		return ERR;
+
+	// Checks whether this is the first time that the program trys to open the final grades file
+	file_exist = fileExist(file_path);
+	if (file_exist)
+	{
+		// open the file saflly with 'w' mode --> fp points to the begining of the file
+		if (fopen_s(&fp, file_path, "w") != FALSE || fp == NULL) {
+			raiseError(2, __FILE__, __func__, __LINE__, ERROR_ID_2_IO);
+			str_safe_free(file_path);
+			return ERR;
+		}
+	}
+	else {
+		// open the file saflly with 'a' mode --> fp points to the end of the file
+
+		if (fopen_s(&fp, file_path, "a") != FALSE || fp == NULL) 
+		{
+			raiseError(2, __FILE__, __func__, __LINE__, ERROR_ID_2_IO);
+			str_safe_free(file_path);
+			return ERR;
+		}
+	}
+	// Free memory allocated to path
+
+	str_safe_free(file_path);
+	
+
+	// Prints content to log file
+	fprintf_s(fp, content);
+
+	// closes the file safely
+	if (fclose(fp) != FALSE) {
+		raiseError(2, __FILE__, __func__, __LINE__, ERROR_ID_2_IO);
+		return ERR;
+	}
+
+
+	return TRUE;
+}
+
+int logManager(Guest_struct *p_guest, char *output_dir_path, char *mode)
+{
+
+	int max_size = MAX_ROOM_NAME_LEN + MAX_GUEST_NAME_LEN + 10;
+	char buffer[MAX_ROOM_NAME_LEN + MAX_GUEST_NAME_LEN + 10];
+	DWORD wait_code;
+	int release_code =TRUE;
+
+	wait_code = WaitForSingleObject(room_mutex[0], INFINITE);
+	if (checkWaitCodeStatus(wait_code) != TRUE)
+		return ERR;
+	
+	writeMessegeBuffer(p_guest, buffer, max_size, mode);
+	if (writeToLog(output_dir_path, buffer) == ERR)
+		return ERR;
+	release_code = ReleaseMutex(room_mutex[0]);
+	if (release_code == FALSE)
+		return ERR;
+
+	return TRUE;
+}
+
+
 /*
 ===================================================================================================================
 											Check customer in - START
@@ -468,7 +553,10 @@ int updateRoomAvaiabilty(Guest_struct *p_guest)
 	/* Update for tonight */
 	room_arr[p_guest->room_number].availablity--;
 	if (p_guest->budget==0)
+	{
 		room_arr[p_guest->room_number].next_day_availablity++;
+		updateCustomerStatus(p_guest, GUEST_CHECK_OUT);
+	}
 	return TRUE;
 }
 
@@ -488,6 +576,52 @@ int guestCheckInProcedure(Guest_struct *p_guest)
 	return TRUE;
 }
 
+int registerRoomParllel(Guest_struct *p_guest)
+{
+	/* Need to wrap with mutex */
+	extern Room_struct room_arr[MAX_NUM_OF_ROOMS];
+
+	switch (p_guest->room_number)
+	{
+		case 0:
+			return (isRoomAvailableWrapper(p_guest));
+			break;
+		case 1:
+			return (isRoomAvailableWrapper(p_guest));
+			break;
+		case 2:
+			return (isRoomAvailableWrapper(p_guest));
+			break;
+		case 3:
+			return (isRoomAvailableWrapper(p_guest));
+			break;
+		case 4:
+			return (isRoomAvailableWrapper(p_guest));
+			break;
+	}
+
+	return FALSE;
+}
+
+int isRoomAvailableWrapper(Guest_struct *p_guest)
+{
+	/* check if room currently avaiable */
+	if (isRoomAvaiable(room_arr[p_guest->room_number]))
+	{
+		/* Check customer in */
+		if (guestCheckInProcedure(p_guest) != TRUE)
+		{
+			printf("Couldn't check customer in.\n");
+			printf("Name: %s\nRoom: %s\nPrice: %d\nBudget: %d\n", p_guest->name, room_arr[p_guest->room_number].name, room_arr[p_guest->room_number].price_pp, p_guest->budget);
+			raiseError(7, __FILE__, __func__, __LINE__, ERROR_ID_7_OTHER);
+			return ERR;
+		}
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
 int registerRoom(Guest_struct *p_guest)
 { 
 	/* Need to wrap with mutex */
@@ -500,6 +634,7 @@ int registerRoom(Guest_struct *p_guest)
 		return ERR;
 	/* check if room currently avaiable */
 	if (isRoomAvaiable(room_arr[p_guest->room_number]))
+	{
 		/* Check customer in */
 		if (guestCheckInProcedure(p_guest)!=TRUE)
 		{
@@ -508,13 +643,12 @@ int registerRoom(Guest_struct *p_guest)
 			raiseError(7, __FILE__, __func__, __LINE__, ERROR_ID_7_OTHER);
 			return ERR;
 		}
-	release_res = ReleaseMutex(room_mutex[0]);
-	if (release_res == FALSE) return ERR;
-
-	return TRUE;
+		return TRUE;
+	}
+	return FALSE;
 }
 
-int CheckIn(Guest_struct *p_guest)
+int checkIn(Guest_struct *p_guest)
 {
 	if (p_guest->room_number == ERR)
 	{
@@ -529,19 +663,12 @@ int CheckIn(Guest_struct *p_guest)
 	}
 	
 	/* try to register room to guest */
-	if (registerRoom(p_guest) != TRUE)
+	if (registerRoomParllel(p_guest) != TRUE)
 	{
-		printf("some error in register room\n");
+		return FALSE;
 	}
-
 	return TRUE;
 }
-
-/*
-===================================================================================================================
-											Check customer in - END
-===================================================================================================================
-*/
 
 
 /*
@@ -550,49 +677,108 @@ int CheckIn(Guest_struct *p_guest)
 ===================================================================================================================
 */
 
+int CheckBudget(Guest_struct *p_guest)
+{
+	/*  if he has no more budget update status and availabilty for next day */
+	if (p_guest->budget == 0)
+	{
+		room_arr[p_guest->room_number].next_day_availablity++;
+		updateCustomerStatus(p_guest, GUEST_CHECK_OUT);
+	}
+	return TRUE;
+}
+
+int oneMoreNight(Guest_struct *p_guest)
+{
+	updateBudget(p_guest);
+	CheckBudget(p_guest);
+	return TRUE;
+}
 
 
 /*
 ===================================================================================================================
-											One more night in - END
+											Checkout - START
 ===================================================================================================================
 */
 
+int checkOut(Guest_struct *p_guest)
+{
+	/* wrap with semaphore */
 
+	updateCustomerStatus(p_guest, GUEST_LEFT);
 
-
-
-/* DEMO ----------------------------------------------------------------------------------------------------------------------------> */
-
-int demoRoomsStruct()
+	return TRUE;
+}
+/*
+===================================================================================================================
+											EndOfDay - START
+===================================================================================================================
+*/
+int endOfDay()
 {
 	extern Room_struct room_arr[MAX_NUM_OF_ROOMS];
-	Guest_struct guest_1, guest_2;
-	printf("working\n");
-	for (int i = 0; i < MAX_NUM_OF_ROOMS; i++)
+	extern int day_counter;
+	extern int num_of_rooms;
+
+	/* Update Availabilty */
+	for (int i = 0; i < num_of_rooms; i++)
 	{
-		room_arr[i].availablity = i + 1;
-		room_arr[i].capacity = i + 1;
-		room_arr[i].ID = i;
-		strcpy_s(room_arr[i].name,8,"my_room");
+		room_arr[i].availablity += room_arr[i].next_day_availablity;
+		/* reset next day availabilty */
 		room_arr[i].next_day_availablity = 0;
-		room_arr[i].price_pp = 30;
-		room_arr[i].waiting_guest_counter = 0;
+	}		
+	/* increase day counter */
+	day_counter++;
+
+	return TRUE;
+}
+
+/*
+===================================================================================================================
+											Manager demo - no threads - START
+===================================================================================================================
+*/
+
+int hotelManager(LPVOID idx)
+{
+	char mode_in[3] = "IN";
+	char mode_out[4] = "OUT";
+	extern int day_counter;
+	extern char **g_argv;
+	extern Guest_struct guest_arr[MAX_NUM_OF_GUESTS];
+	int guest_idx = 0;
+	guest_idx = (int)idx;
+
+
+	switch (guest_arr[guest_idx].status)
+	{
+		case (GUEST_WAIT):
+		{
+			if (checkIn(&guest_arr[guest_idx]))
+			{
+				if (!logManager(&guest_arr[guest_idx], g_argv[1], mode_in))
+					return ERR;	
+			}
+			break;
+		}
+		case (GUEST_REGISTERED):
+		{
+			oneMoreNight(&guest_arr[guest_idx]);
+			break;
+		}
+		case (GUEST_CHECK_OUT):
+		{
+			checkOut(&guest_arr[guest_idx]);
+			if (!logManager(&guest_arr[guest_idx], g_argv[1], mode_out))
+				return ERR;
+			break;
+		}
+		case (GUEST_LEFT):
+		{
+			break;
+		}
+			
 	}
-
-	guest_1.budget = 90;
-	guest_1.ID = 1;
-	guest_1.room_number = -1;
-	guest_1.status = GUEST_WAIT;
-	guest_1.total_number_of_nights = 0;
-	strcpy_s(guest_1.name, 8, "tomer");
-
-	guest_2.budget = 95;
-	guest_2.ID = 2;
-	guest_2.room_number = -2;
-	guest_2.status = GUEST_WAIT;
-	guest_2.total_number_of_nights = 0;
-	strcpy_s(guest_2.name, 8, "segev");
-
 	return TRUE;
 }
