@@ -12,6 +12,7 @@ Caculate student grade main functions
 #pragma once
 #include "hardCodedData.h"
 
+
 // Defines  --------------------------------------------------------------------------------------------------------
 #define MAX_GUEST_NAME_LEN 20
 #define MAX_ROOM_NAME_LEN 20
@@ -47,12 +48,18 @@ typedef struct _Room_struct
 } Room_struct;
 
 // Declerations ---------------------------------------------------------------------------------------------------
+int runHotelWithThreads();
+int createRoomMutex();
 void printGuestStruct(Guest_struct guest_arr[MAX_NUM_OF_GUESTS]);
 void printRoomStruct();
+int hotelManager(LPVOID p_guest);
 int readGuestFile(char dir_path[], Guest_struct guest_arr[MAX_NUM_OF_GUESTS]);
 int readRoomFile(char dir_path[]);
 int getGuestDataFromLine(char *line, char guest_name[], int *budget);
 int getRoomDataFromLine(char *line, char room_name[], int *price, int *capacity);
+static HANDLE CreateThreadSimple(LPTHREAD_START_ROUTINE p_start_routine,
+	LPVOID p_thread_parameters,
+	LPDWORD p_thread_id);
 
 int getRoomForGuest(Guest_struct *p_guest);
 int isRoomAvaiable(Room_struct p_room);

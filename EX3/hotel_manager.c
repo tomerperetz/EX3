@@ -1,11 +1,171 @@
 #include "hotel_manager.h"
 
+
 // Global variables -------------------------------------------------------------------------------------->
 Room_struct room_arr[MAX_NUM_OF_ROOMS];
+static HANDLE room_mutex[MAX_NUM_OF_ROOMS];
 int day_counter = 1;
 int num_of_guests = 0;
 int num_of_rooms = 0;
 
+int hotelManager(LPVOID idx)
+{
+	//Sleep(10);
+	
+	extern Guest_struct guest_arr[MAX_NUM_OF_GUESTS];
+	int guest_idx = 0;
+	//if (p_params == NULL)
+	//	return ERR;
+	guest_idx = (int) idx;
+	printf("Guest idx: %d\n", guest_idx);
+	if (CheckIn(&guest_arr[guest_idx]) != TRUE)
+		return ERR;
+	return TRUE;
+}
+int checkWaitCodeStatus(DWORD wait_code) {
+	int retVal1 = ERR;
+	DWORD errorMessageID;
+	switch (wait_code)
+	{
+	case WAIT_TIMEOUT:
+		raiseError(6, __FILE__, __func__, __LINE__, ERROR_ID_6_THREADS);
+		printf("details: Timeout error when waiting\n");
+		break;
+	case WAIT_FAILED:
+		errorMessageID = GetLastError();
+		printf("%d\n", errorMessageID);
+		raiseError(6, __FILE__, __func__, __LINE__, ERROR_ID_6_THREADS);
+		printf("details: Timeout error when waiting\n");
+		break;
+	case WAIT_OBJECT_0:
+		retVal1 = TRUE;
+		break;
+	case WAIT_ABANDONED_0:
+		raiseError(6, __FILE__, __func__, __LINE__, ERROR_ID_6_THREADS);
+		printf("details: WAIT ANDONED\n");
+		break;
+	}
+	// special case that also allowed
+	if (wait_code >= WAIT_OBJECT_0 && wait_code <= WAIT_OBJECT_0 + num_of_guests - 1) {
+		retVal1 = TRUE;
+	}
+	return retVal1;
+}
+int createRoomMutex()
+{
+	int retVal1 = TRUE;
+	for (int i = 0; i < MAX_NUM_OF_ROOMS; i++) {
+		room_mutex[i] = NULL;
+	}
+	for (int i = 0; i < MAX_NUM_OF_ROOMS; i++)
+	{
+		room_mutex[i] = CreateMutex(
+			NULL,   /* default security attributes */
+			FALSE,	/* don't lock mutex immediately */
+			NULL); /* un-named */
+		if (room_mutex[i] == NULL) {
+			raiseError(6, __FILE__, __func__, __LINE__, "Mutex creation failed\n");
+			retVal1 = ERR;
+			break;
+		}
+	}
+	return retVal1;
+}
+
+int runHotelWithThreads()
+{
+	extern int num_of_guests;
+	/*
+	Description: read a list of files content into variables using threads.
+	parameters:
+			 - char **files_list - files list.
+			 -  int *grades_list - empty grades array.
+	Return: TRUE if succeded, ERR o.w
+	*/
+	//HANDLE p_thread_handles[MAX_FILES];
+	HANDLE p_thread_handles[MAX_NUM_OF_GUESTS];
+	DWORD p_thread_ids[MAX_NUM_OF_GUESTS];
+	DWORD num_of_threads = MAX_NUM_OF_GUESTS;
+	DWORD wait_code;
+	DWORD exit_code;
+	BOOL ret_val;
+	int retVal1 = TRUE;
+
+	/* initialization of the thread array */
+	for (int i = 0; i < MAX_NUM_OF_GUESTS; i++) {
+		p_thread_handles[i] = NULL;
+	}
+	/* Create mutex */
+	retVal1 = createRoomMutex();
+	if (retVal1 != TRUE)
+		goto Main_Cleanup_2;
+
+	/* Create thread */
+	for (int i = 0; i < num_of_guests; i++)	{
+		/* Prepare parameters for thread */
+
+		p_thread_handles[i] = CreateThreadSimple((LPTHREAD_START_ROUTINE)hotelManager, (LPVOID) i, &p_thread_ids[i]);
+
+		if (NULL == p_thread_handles[i])
+		{
+			raiseError(6, __FILE__, __func__, __LINE__, ERROR_ID_6_THREADS);
+			printf("details: Error when creating thread\n");
+			retVal1 = ERR;
+			goto Main_Cleanup_2;
+		}
+	}
+	/* Wait */
+	wait_code = WaitForMultipleObjects(num_of_guests, p_thread_handles, TRUE, INFINITE);
+
+	/* WAIT CODE cases*/
+	retVal1 = checkWaitCodeStatus(wait_code);
+	// Checks if the wait code was WAIT_OBJECT_0, 
+	if (retVal1 == ERR) {
+		retVal1 = ERR;
+		goto Main_Cleanup_2;
+	}
+	/* Check the DWORD returned by readGradeFileThread */
+	for (int i = 0; i < num_of_guests; i++)
+	{
+		ret_val = GetExitCodeThread(p_thread_handles[i], &exit_code);
+		if (FALSE == ret_val)
+		{
+			raiseError(6, __FILE__, __func__, __LINE__, ERROR_ID_6_THREADS);
+			printf("details: Error getting thread exit code\n");
+			retVal1 = ERR;
+			goto Main_Cleanup_2;
+		}
+		// checks exit code
+		if (exit_code == ERR)
+		{
+			raiseError(6, __FILE__, __func__, __LINE__, ERROR_ID_6_THREADS);
+			printf("Error in thread: %d. Exit code: %d\n", i, exit_code);
+			retVal1 = ERR;
+			goto Main_Cleanup_2;
+		}
+		if (exit_code != TRUE)
+		{
+			raiseError(6, __FILE__, __func__, __LINE__, ERROR_ID_6_THREADS);
+			printf("Details: Error in thread: %d. Exit code: %d\n", i, exit_code);
+			retVal1 = ERR;
+			goto Main_Cleanup_2;
+		}
+		/* Close thread handle */
+		ret_val = CloseHandle(p_thread_handles[i]);
+		p_thread_handles[i] = NULL;
+		if (ret_val == FALSE)
+		{
+			raiseError(6, __FILE__, __func__, __LINE__, ERROR_ID_6_THREADS);
+			printf("Details: Error when closing thread\n");
+			retVal1 = ERR;
+			goto Main_Cleanup_2;
+		}
+	}
+	Main_Cleanup_2:
+		closeHandles(room_mutex, MAX_NUM_OF_ROOMS);
+		closeHandles(p_thread_handles, num_of_guests);
+	return retVal1;
+}
 
 void printGuestStruct(Guest_struct guest_arr[MAX_NUM_OF_GUESTS]) {
 	extern int num_of_guests;
@@ -166,7 +326,6 @@ int readGuestFile(char dir_path[], Guest_struct guest_arr[MAX_NUM_OF_GUESTS])
 			ret_val = ERR;
 			break;
 		}
-		
 		guest_arr[num_of_guests].budget = budget;
 		strcpy_s(guest_arr[num_of_guests].name, MAX_GUEST_NAME_LEN, guest_name);
 		guest_arr[num_of_guests].ID = num_of_guests;
@@ -174,11 +333,10 @@ int readGuestFile(char dir_path[], Guest_struct guest_arr[MAX_NUM_OF_GUESTS])
 		guest_arr[num_of_guests].status = GUEST_WAIT;
 		guest_arr[num_of_guests].total_number_of_nights = 0;
 		guest_arr[num_of_guests].check_in_day = -1;
-
+		
 		num_of_guests += 1;
 	}
-	if (fclose(fp) != FALSE)
-	{
+	if (fclose(fp) != FALSE) {
 		raiseError(2, __FILE__, __func__, __LINE__, ERROR_ID_2_IO);
 		printf("closing file FAILED\nFile: %s\n", file_path);
 		return ERR;
@@ -218,6 +376,47 @@ int getGuestDataFromLine(char *line, char guest_name[], int *budget)
 	return TRUE;
 }
 
+static HANDLE CreateThreadSimple(LPTHREAD_START_ROUTINE p_start_routine,
+	LPVOID p_thread_parameters,
+	LPDWORD p_thread_id)
+{
+	/*
+	Description: create thread with arg wrapper
+	parameters:
+			- LPTHREAD_START_ROUTINE p_start_routine
+			- LPVOID p_thread_parameters
+			- LPDWORD p_thread_id
+	Return: thread_handle if succeded, ERR o.w
+	*/
+
+	HANDLE thread_handle;
+
+	if (NULL == p_start_routine)
+	{
+		raiseError(6, __FILE__, __func__, __LINE__, ERROR_ID_6_THREADS);
+		printf("Details: Error when creating a thread");
+		printf("\tReceived null pointer");
+		return NULL;
+	}
+
+	if (NULL == p_thread_id)
+	{
+		raiseError(6, __FILE__, __func__, __LINE__, ERROR_ID_6_THREADS);
+		printf("Details: Error when creating a thread");
+		printf("\tReceived null pointer");
+		return NULL;
+	}
+
+	thread_handle = CreateThread(
+		NULL,                /*  default security attributes */
+		0,                   /*  use default stack size */
+		p_start_routine,     /*  thread function */
+		p_thread_parameters, /*  argument to thread function */
+		0,                   /*  use default creation flags */
+		p_thread_id);        /*  returns the thread identifier */
+
+	return thread_handle;
+}
 
 // Functions --------------------------------------------------------------------------------------------->
 /*
@@ -293,7 +492,12 @@ int registerRoom(Guest_struct *p_guest)
 { 
 	/* Need to wrap with mutex */
 	extern Room_struct room_arr[MAX_NUM_OF_ROOMS];
+	DWORD wait_code;
+	BOOL release_res = TRUE;
 
+	wait_code = WaitForSingleObject(room_mutex[0], INFINITE);
+	if (checkWaitCodeStatus(wait_code) != TRUE)
+		return ERR;
 	/* check if room currently avaiable */
 	if (isRoomAvaiable(room_arr[p_guest->room_number]))
 		/* Check customer in */
@@ -304,6 +508,9 @@ int registerRoom(Guest_struct *p_guest)
 			raiseError(7, __FILE__, __func__, __LINE__, ERROR_ID_7_OTHER);
 			return ERR;
 		}
+	release_res = ReleaseMutex(room_mutex[0]);
+	if (release_res == FALSE) return ERR;
+
 	return TRUE;
 }
 
@@ -321,7 +528,6 @@ int CheckIn(Guest_struct *p_guest)
 		}
 	}
 	
-
 	/* try to register room to guest */
 	if (registerRoom(p_guest) != TRUE)
 	{
