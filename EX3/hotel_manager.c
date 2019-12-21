@@ -306,14 +306,19 @@ int registerRoom(Guest_struct *p_guest)
 
 int CheckIn(Guest_struct *p_guest)
 {
-	/* search room for guest */
-	if (getRoomForGuest(p_guest) != TRUE)
+	if (p_guest->room_number != ERR)
 	{
-		printf("Couldn't allocate room to this guest! please update his budget.\n");
-		printf("Name: %s\nRoom: %s\nPrice: %d\nBudget: %d", p_guest->name, room_arr[p_guest->room_number].name, room_arr[p_guest->room_number].price_pp, p_guest->budget);
-		raiseError(7, __FILE__, __func__, __LINE__, ERROR_ID_7_OTHER);
-		return ERR;
-	}	
+		/* search room for guest */
+		if (getRoomForGuest(p_guest) != TRUE)
+		{
+			printf("Couldn't allocate room to this guest! please update his budget.\n");
+			printf("Name: %s\nRoom: %s\nPrice: %d\nBudget: %d", p_guest->name, room_arr[p_guest->room_number].name, room_arr[p_guest->room_number].price_pp, p_guest->budget);
+			raiseError(7, __FILE__, __func__, __LINE__, ERROR_ID_7_OTHER);
+			return ERR;
+		}
+	}
+	
+
 	/* try to register room to guest */
 	if (registerRoom(p_guest) != TRUE)
 	{
