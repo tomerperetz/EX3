@@ -23,6 +23,11 @@ Caculate student grade main functions
 #define GUEST_REGISTERED 1
 #define GUEST_CHECK_OUT 2
 #define GUEST_LEFT 3
+#define ROOM_NUM_0 0
+#define ROOM_NUM_1 1
+#define ROOM_NUM_2 2
+#define ROOM_NUM_3 3
+#define ROOM_NUM_4 4
 
 // Structs ---------------------------------------------------------------------------------------------------------
 typedef struct _Guest_struct
@@ -51,7 +56,7 @@ typedef struct _Room_struct
 
 int runHotelWithThreads();
 
-int createRoomMutex();
+int createProgramMutexes();
 
 void printGuestStruct(Guest_struct guest_arr[MAX_NUM_OF_GUESTS]);
 
@@ -93,21 +98,19 @@ int logManager(Guest_struct *p_guest, char *output_dir_path, char *mode);
 
 int getRoomForGuest(Guest_struct *p_guest);
 
-int registerRoomParllel(Guest_struct *p_guest);
+int registerRoomParllel(Guest_struct *p_guest, int room_idx);
 
 int isRoomAvailableWrapper(Guest_struct *p_guest);
 
 int isRoomAvaiable(Room_struct p_room);
 
-int updateBudget(Guest_struct *p_guest);
+void updateBudget(Guest_struct *p_guest);
 
-int updateRoomAvaiabilty(Guest_struct *p_guest);
+void updateRoomAvaiabilty(Guest_struct *p_guest);
 
-int updateCustomerStatus(Guest_struct *p_guest, int status);
+void updateCustomerStatus(Guest_struct *p_guest, int status);
 
-int guestCheckInProcedure(Guest_struct *p_guest);
-
-int registerRoom(Guest_struct *p_guest);
+void guestCheckInProcedure(Guest_struct *p_guest);
 
 int checkIn(Guest_struct *p_guest);
 
@@ -118,9 +121,9 @@ int checkIn(Guest_struct *p_guest);
 ===================================================================================================================
 */
 
-int CheckBudget(Guest_struct *p_guest);
+void CheckBudget(Guest_struct *p_guest);
 
-int oneMoreNight(Guest_struct *p_guest);
+void oneMoreNight(Guest_struct *p_guest);
 
 
 /*
@@ -129,7 +132,7 @@ int oneMoreNight(Guest_struct *p_guest);
 ===================================================================================================================
 */
 
-int checkOut(Guest_struct *p_guest);
+void checkOut(Guest_struct *p_guest);
 
 /*
 ===================================================================================================================
@@ -137,7 +140,7 @@ int checkOut(Guest_struct *p_guest);
 ===================================================================================================================
 */
 
-int endOfDay();
+void endOfDay(Guest_struct *p_guest);
 
 /*
 ===================================================================================================================
