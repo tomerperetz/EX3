@@ -265,6 +265,10 @@ int readRoomFile(char dir_path[])
 	str_safe_free(file_path);
 	while (!feof(fp) && num_of_guests <= MAX_NUM_OF_GUESTS) {
 		fgets(line, MAX_LINE_LENGTH, fp);
+		if (strcmp(line, "\n") == EQUAL || strcmp(line, "\0") == EQUAL) {
+			printf("line %d %d\n", num_of_guests, strcmp(line, "\n"));
+			break;
+		}
 		if (getRoomDataFromLine(line, room_name, &price, &capacity) != TRUE) {
 			ret_val = ERR;
 			break;
@@ -337,7 +341,6 @@ int readGuestFile(char dir_path[], Guest_struct guest_arr[MAX_NUM_OF_GUESTS])
 	int idx = 0, budget = 0, ret_val = TRUE;
 	FILE *fp = NULL;
 	char file_name[11] = "/names.txt", *file_path = NULL, guest_name[MAX_GUEST_NAME_LEN], line[MAX_LINE_LENGTH];
-
 	if (strcatDynamic(dir_path, file_name, &file_path) == FALSE) {
 		return ERR;
 	}
@@ -352,6 +355,10 @@ int readGuestFile(char dir_path[], Guest_struct guest_arr[MAX_NUM_OF_GUESTS])
 	
 	while (!feof(fp) && num_of_guests <= MAX_NUM_OF_GUESTS) {
 		fgets(line, MAX_LINE_LENGTH, fp);
+		if (strcmp(line, "\n") == EQUAL || strcmp(line, "\0") == EQUAL) {
+			printf("line %d %d\n", num_of_guests, strcmp(line, "\n"));
+			break;
+		}
 		if (getGuestDataFromLine(line, guest_name, &budget) != TRUE) {
 			ret_val = ERR;
 			break;
