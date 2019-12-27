@@ -139,8 +139,8 @@ void checkOut(Guest_struct *p_guest);
 											EndOfDay - START
 ===================================================================================================================
 */
-
-void endOfDay(Guest_struct *p_guest);
+void checkIfAllGuestDone();
+int endOfBusinessDay(Guest_struct *p_guest);
 
 /*
 ===================================================================================================================

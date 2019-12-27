@@ -21,17 +21,7 @@ char **g_argv;
 
 
 // Functions --------------------------------------------------------------------
-int checkWaitList(Guest_struct **guest_arr)
-{
-	extern int num_of_guests;
-	int wait_list = 0;
-	for (int idx = 0; idx < num_of_guests; idx++)
-	{
-		if (guest_arr[idx]->status == GUEST_WAIT)
-			wait_list += 1;
-	}
-	return wait_list;
-}
+
 
 int main(int argc, char *argv[])
 {
@@ -56,10 +46,10 @@ int main(int argc, char *argv[])
 	}
 
 	runHotelWithThreads(&guest_arr);
-	printf("\n\n=========================AFTER===============================\n\n");
-	printRoomStruct();
-	printGuestStruct(guest_arr);
-	printf("\n\n=========================AFTER===============================\n\n");
+	//printf("\n\n=========================AFTER===============================\n\n");
+	//printRoomStruct();
+	//printGuestStruct(guest_arr);
+	//printf("\n\n=========================AFTER===============================\n\n");
 
 	printf("Program ended successfully!\n");
 
