@@ -264,7 +264,7 @@ int readRoomFile(char dir_path[])
 	str_safe_free(file_path);
 	while (!feof(fp) && num_of_rooms <= MAX_NUM_OF_ROOMS) {
 		fgets(line, MAX_LINE_LENGTH, fp);
-		if (strcmp(line, "\n") == EQUAL || strcmp(line, "\0") == EQUAL) {
+		if (strlen(line) <= MIN_LINE_LEN) {
 			continue;
 		}
 		if (getRoomDataFromLine(line, room_name, &price, &capacity) != TRUE) {
@@ -280,6 +280,7 @@ int readRoomFile(char dir_path[])
 		room_arr[num_of_rooms].ID = num_of_rooms;
 		room_arr[num_of_rooms].waiting_guest_counter = 0;
 		num_of_rooms++;
+		strcpy_s(line, MIN_LINE_LEN, "\0");
 	}
 	if (fclose(fp) != FALSE)
 	{
@@ -354,7 +355,7 @@ int readGuestFile(char dir_path[], Guest_struct guest_arr[MAX_NUM_OF_GUESTS])
 	
 	while (!feof(fp) && num_of_guests <= MAX_NUM_OF_GUESTS) {
 		fgets(line, MAX_LINE_LENGTH, fp);
-		if (strcmp(line, "\n") == EQUAL || strcmp(line, "\0") == EQUAL) {
+		if (strlen(line)<= MIN_LINE_LEN) {
 			continue;
 		}
 		if (getGuestDataFromLine(line, guest_name, &budget) != TRUE) {
@@ -370,6 +371,7 @@ int readGuestFile(char dir_path[], Guest_struct guest_arr[MAX_NUM_OF_GUESTS])
 		guest_arr[num_of_guests].check_in_day = -1;
 		
 		num_of_guests += 1;
+		strcpy_s(line, MIN_LINE_LEN,"\0");
 	}
 	if (fclose(fp) != FALSE) {
 		raiseError(2, __FILE__, __func__, __LINE__, ERROR_ID_2_IO);

@@ -28,6 +28,7 @@ Caculate student grade main functions
 #define ROOM_NUM_2 2
 #define ROOM_NUM_3 3
 #define ROOM_NUM_4 4
+#define MIN_LINE_LEN 5
 
 // Structs ---------------------------------------------------------------------------------------------------------
 typedef struct _Guest_struct
