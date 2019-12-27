@@ -15,6 +15,235 @@ int end_of_day_guest_counter = 0;
 int status = TRUE;
 // Functions ------------------------------------------------------------------------------------------------------>
 
+/*
+===================================================================================================================
+							Parsing Data From Room File and From Guest File
+===================================================================================================================
+*/
+
+
+void printGuestStruct(Guest_struct guest_arr[MAX_NUM_OF_GUESTS]) {
+	extern int num_of_guests;
+	int idx = 0;
+	for (idx = 0; idx < num_of_guests; idx++) {
+
+		printf("*******************************\n");
+		printf("| Guest Name:        | %s\n", guest_arr[idx].name);
+		printf("*******************************\n");
+		printf("| Guest Budget:      | %d\n", guest_arr[idx].budget);
+		printf("-------------------------------\n");
+		printf("| Guest ID:          | %d\n", guest_arr[idx].ID);
+		printf("-------------------------------\n");
+		printf("| Guest Room #:      | %d\n", guest_arr[idx].room_number);
+		printf("-------------------------------\n");
+		printf("| Guest Status       | %d\n", guest_arr[idx].status);
+		printf("-------------------------------\n");
+		printf("| Gueat Tot # nights:| %d\n", guest_arr[idx].total_number_of_nights);
+		printf("-------------------------------\n");
+	}
+	printf("Total number of Guests: %d\n", num_of_guests);
+}
+
+void printRoomStruct()
+{
+	extern Room_struct room_arr[MAX_NUM_OF_ROOMS];
+	extern int num_of_rooms;
+	int idx = 0;
+	for (idx = 0; idx < num_of_rooms; idx++) {
+
+		printf("***********************************************\n");
+		printf("| Room Name:                    | %s\n", room_arr[idx].name);
+		printf("***********************************************\n");
+		printf("| Room Price:                   | %d\n", room_arr[idx].price_pp);
+		printf("-----------------------------------------------\n");
+		printf("| Room Capacity:                | %d\n", room_arr[idx].capacity);
+		printf("-----------------------------------------------\n");
+		printf("| Room ID:                      | %d\n", room_arr[idx].ID);
+		printf("-----------------------------------------------\n");
+		printf("| Room Availabilty #:           | %d\n", room_arr[idx].availablity);
+		printf("-----------------------------------------------\n");
+		printf("| Room next day Availabilty     | %d\n", room_arr[idx].next_day_availablity);
+		printf("-----------------------------------------------\n");
+		printf("| Room waiting list counter     | %d\n", room_arr[idx].waiting_guest_counter);
+		printf("-----------------------------------------------\n");
+	}
+	printf("Total number of Rooms: %d\n", num_of_rooms);
+}
+
+int readRoomFile(char dir_path[])
+{
+	extern Room_struct room_arr[MAX_NUM_OF_ROOMS];
+	extern int num_of_rooms;
+	FILE *fp = NULL;
+	char file_name[11] = "/rooms.txt", *file_path = NULL, room_name[MAX_ROOM_NAME_LEN], line[MAX_LINE_LENGTH];
+	int capacity = 0, price = 0, ret_val = TRUE;
+	if (strcatDynamic(dir_path, file_name, &file_path) == FALSE) {
+		return ERR;
+	}
+	if (fopen_s(&fp, file_path, "r") != FALSE || fp == NULL) {
+		printf("Can't open file: %s\n", file_path);
+		str_safe_free(file_path);
+		raiseError(2, __FILE__, __func__, __LINE__, ERROR_ID_2_IO);
+		return ERR;
+	}
+	str_safe_free(file_path);
+	while (!feof(fp) && num_of_rooms <= MAX_NUM_OF_ROOMS) {
+		fgets(line, MAX_LINE_LENGTH, fp);
+		if (strlen(line) <= MIN_LINE_LEN) {
+			break;
+		}
+		if (getRoomDataFromLine(line, room_name, &price, &capacity) != TRUE) {
+			ret_val = ERR;
+			break;
+		}
+
+		strcpy_s(room_arr[num_of_rooms].name, MAX_ROOM_NAME_LEN, room_name);
+		room_arr[num_of_rooms].price_pp = price;
+		room_arr[num_of_rooms].capacity = capacity;
+		room_arr[num_of_rooms].availablity = capacity;
+		room_arr[num_of_rooms].next_day_availablity = 0;
+		room_arr[num_of_rooms].ID = num_of_rooms;
+		room_arr[num_of_rooms].waiting_guest_counter = 0;
+		num_of_rooms++;
+		strcpy_s(line, MIN_LINE_LEN, "\0");
+	}
+	if (fclose(fp) != FALSE)
+	{
+		raiseError(2, __FILE__, __func__, __LINE__, ERROR_ID_2_IO);
+		printf("closing file FAILED\nFile: %s\n", file_path);
+		return ERR;
+	}
+	return ret_val;
+}
+
+int getRoomDataFromLine(char *line, char room_name[], int *price, int *capacity)
+{
+	char space = ' ', price_str[MAX_LINE_LENGTH], capacity_str[MAX_LINE_LENGTH];
+	int line_len = 0, idx = 0, price_idx = 0;
+	if (line == NULL) {
+		raiseError(10, __FILE__, __func__, __LINE__, "Guest Name File has an invalid line");
+		return ERR;
+	}
+	line_len = strlen(line);
+	while ((idx < line_len) && line[idx] != space) {
+		room_name[idx] = line[idx];
+		idx++;
+	}
+	room_name[idx] = END_OF_STR;
+	idx++;
+
+	while ((idx < line_len) && (line[idx] > 47) && (line[idx] < 58) && line[idx] != space) {
+		price_str[price_idx] = line[idx];
+		idx++;
+		price_idx++;
+	}
+	if (price_str == NULL) {
+		raiseError(10, __FILE__, __func__, __LINE__, "Guest Name File has an invalid line");
+		return ERR;
+	}
+	price_str[price_idx] = END_OF_STR;
+	*price = atoi(price_str);
+	idx++;
+	price_idx = 0;
+
+	while ((idx < line_len) && (line[idx] > 47) && (line[idx] < 58)) {
+		capacity_str[price_idx] = line[idx];
+		idx++;
+		price_idx++;
+	}
+	if (capacity_str == NULL) {
+		raiseError(10, __FILE__, __func__, __LINE__, "Guest Name File has an invalid line");
+		return ERR;
+	}
+	capacity_str[price_idx] = END_OF_STR;
+	*capacity = atoi(capacity_str);
+	return TRUE;
+}
+
+int readGuestFile(char dir_path[], Guest_struct guest_arr[MAX_NUM_OF_GUESTS])
+{
+	extern int num_of_guests;
+	int idx = 0, budget = 0, ret_val = TRUE;
+	FILE *fp = NULL;
+	char file_name[11] = "/names.txt", *file_path = NULL, guest_name[MAX_GUEST_NAME_LEN], line[MAX_LINE_LENGTH];
+	if (strcatDynamic(dir_path, file_name, &file_path) == FALSE) {
+		return ERR;
+	}
+
+	if (fopen_s(&fp, file_path, "r") != FALSE || fp == NULL) {
+		printf("Can't open file: %s\n", file_path);
+		str_safe_free(file_path);
+		raiseError(2, __FILE__, __func__, __LINE__, ERROR_ID_2_IO);
+		return ERR;
+	}
+	str_safe_free(file_path);
+
+	while (!feof(fp) && num_of_guests <= MAX_NUM_OF_GUESTS) {
+		fgets(line, MAX_LINE_LENGTH, fp);
+		if (strlen(line) <= MIN_LINE_LEN) {
+			break;
+		}
+		if (getGuestDataFromLine(line, guest_name, &budget) != TRUE) {
+			ret_val = ERR;
+			break;
+		}
+		guest_arr[num_of_guests].budget = budget;
+		strcpy_s(guest_arr[num_of_guests].name, MAX_GUEST_NAME_LEN, guest_name);
+		guest_arr[num_of_guests].ID = num_of_guests;
+		guest_arr[num_of_guests].room_number = -1;
+		guest_arr[num_of_guests].status = GUEST_WAIT;
+		guest_arr[num_of_guests].total_number_of_nights = 0;
+		guest_arr[num_of_guests].check_in_day = -1;
+
+		num_of_guests += 1;
+		strcpy_s(line, MIN_LINE_LEN, "\0");
+	}
+	if (fclose(fp) != FALSE) {
+		raiseError(2, __FILE__, __func__, __LINE__, ERROR_ID_2_IO);
+		printf("closing file FAILED\nFile: %s\n", file_path);
+		return ERR;
+	}
+	return ret_val;
+}
+
+int getGuestDataFromLine(char *line, char guest_name[], int *budget)
+{
+	char space = ' ', budget_str[MAX_LINE_LENGTH];
+	int line_len = 0, idx = 0, budget_idx = 0;
+	if (line == NULL) {
+		raiseError(10, __FILE__, __func__, __LINE__, "Guest Name File has an invalid line");
+		return ERR;
+	}
+
+	line_len = strlen(line);
+	while ((idx < line_len) && line[idx] != space) {
+		guest_name[idx] = line[idx];
+		idx++;
+	}
+	guest_name[idx] = END_OF_STR;
+	idx++;
+
+	while ((idx < line_len) && (line[idx] > 47) && (line[idx] < 58)) {
+		budget_str[budget_idx] = line[idx];
+		idx++;
+		budget_idx++;
+	}
+	if (budget_str == NULL) {
+		raiseError(10, __FILE__, __func__, __LINE__, "Guest Name File has an invalid line");
+		return ERR;
+	}
+	budget_str[budget_idx] = END_OF_STR;
+	*budget = atoi(budget_str);
+
+	return TRUE;
+}
+
+/*
+===================================================================================================================
+							Threads, Mutexes and Semaphores handler - START
+===================================================================================================================
+*/
+
 int checkWaitCodeStatus(DWORD wait_code, BOOL singleNotMultiple) {
 	int retVal1 = ERR;
 	DWORD errorMessageID;
@@ -195,222 +424,6 @@ Main_Cleanup_1:
 	if (end_of_business_day != NULL) CloseHandle(end_of_business_day);
 	if (retVal1 != TRUE) return ERR;
 	return day_counter;
-}
-
-void printGuestStruct(Guest_struct guest_arr[MAX_NUM_OF_GUESTS]) {
-	extern int num_of_guests;
-	int idx = 0;
-	for (idx = 0; idx < num_of_guests; idx++) {
-		
-		printf("*******************************\n");
-		printf("| Guest Name:        | %s\n", guest_arr[idx].name);
-		printf("*******************************\n");
-		printf("| Guest Budget:      | %d\n", guest_arr[idx].budget);
-		printf("-------------------------------\n");
-		printf("| Guest ID:          | %d\n", guest_arr[idx].ID);
-		printf("-------------------------------\n");
-		printf("| Guest Room #:      | %d\n", guest_arr[idx].room_number);
-		printf("-------------------------------\n");
-		printf("| Guest Status       | %d\n", guest_arr[idx].status);
-		printf("-------------------------------\n");
-		printf("| Gueat Tot # nights:| %d\n", guest_arr[idx].total_number_of_nights);
-		printf("-------------------------------\n");
-	}
-	printf("Total number of Guests: %d\n", num_of_guests);
-}
-
-void printRoomStruct() 
-{
-	extern Room_struct room_arr[MAX_NUM_OF_ROOMS];
-	extern int num_of_rooms;
-	int idx = 0;
-	for (idx = 0; idx < num_of_rooms; idx++) {
-
-		printf("***********************************************\n");
-		printf("| Room Name:                    | %s\n", room_arr[idx].name);
-		printf("***********************************************\n");
-		printf("| Room Price:                   | %d\n", room_arr[idx].price_pp);
-		printf("-----------------------------------------------\n");
-		printf("| Room Capacity:                | %d\n", room_arr[idx].capacity);
-		printf("-----------------------------------------------\n");
-		printf("| Room ID:                      | %d\n", room_arr[idx].ID);
-		printf("-----------------------------------------------\n");
-		printf("| Room Availabilty #:           | %d\n", room_arr[idx].availablity);
-		printf("-----------------------------------------------\n");
-		printf("| Room next day Availabilty     | %d\n", room_arr[idx].next_day_availablity);
-		printf("-----------------------------------------------\n");
-		printf("| Room waiting list counter     | %d\n", room_arr[idx].waiting_guest_counter);
-		printf("-----------------------------------------------\n");
-	}
-	printf("Total number of Rooms: %d\n", num_of_rooms);
-}
-
-int readRoomFile(char dir_path[]) 
-{
-	extern Room_struct room_arr[MAX_NUM_OF_ROOMS];
-	extern int num_of_rooms;
-	FILE *fp = NULL;
-	char file_name[11] = "/rooms.txt", *file_path = NULL, room_name[MAX_ROOM_NAME_LEN], line[MAX_LINE_LENGTH];
-	int capacity = 0, price = 0, ret_val = TRUE;
-	if (strcatDynamic(dir_path, file_name, &file_path) == FALSE) {
-		return ERR;
-	}
-	if (fopen_s(&fp, file_path, "r") != FALSE || fp == NULL) {
-		printf("Can't open file: %s\n", file_path);
-		str_safe_free(file_path);
-		raiseError(2, __FILE__, __func__, __LINE__, ERROR_ID_2_IO);
-		return ERR;
-	}
-	str_safe_free(file_path);
-	while (!feof(fp) && num_of_rooms <= MAX_NUM_OF_ROOMS) {
-		fgets(line, MAX_LINE_LENGTH, fp);
-		if (strlen(line) <= MIN_LINE_LEN) {
-			break;
-		}
-		if (getRoomDataFromLine(line, room_name, &price, &capacity) != TRUE) {
-			ret_val = ERR;
-			break;
-		}
-
-		strcpy_s(room_arr[num_of_rooms].name, MAX_ROOM_NAME_LEN, room_name);
-		room_arr[num_of_rooms].price_pp = price;
-		room_arr[num_of_rooms].capacity = capacity;
-		room_arr[num_of_rooms].availablity = capacity;
-		room_arr[num_of_rooms].next_day_availablity = 0;
-		room_arr[num_of_rooms].ID = num_of_rooms;
-		room_arr[num_of_rooms].waiting_guest_counter = 0;
-		num_of_rooms++;
-		strcpy_s(line, MIN_LINE_LEN, "\0");
-	}
-	if (fclose(fp) != FALSE)
-	{
-		raiseError(2, __FILE__, __func__, __LINE__, ERROR_ID_2_IO);
-		printf("closing file FAILED\nFile: %s\n", file_path);
-		return ERR;
-	}
-	return ret_val;
-}
-
-int getRoomDataFromLine(char *line, char room_name[], int *price, int *capacity)
-{
-	char space = ' ', price_str[MAX_LINE_LENGTH], capacity_str[MAX_LINE_LENGTH];
-	int line_len = 0, idx = 0, price_idx = 0;
-	if (line == NULL) {
-		raiseError(10, __FILE__, __func__, __LINE__, "Guest Name File has an invalid line");
-		return ERR;
-	}
-	line_len = strlen(line);
-	while ((idx < line_len) && line[idx] != space) {
-		room_name[idx] = line[idx];
-		idx++;
-	}
-	room_name[idx] = END_OF_STR;
-	idx++;
-
-	while ((idx < line_len) && (line[idx] > 47) && (line[idx] < 58) && line[idx] != space) {
-		price_str[price_idx] = line[idx];
-		idx++;
-		price_idx++;
-	}
-	if (price_str == NULL) {
-		raiseError(10, __FILE__, __func__, __LINE__, "Guest Name File has an invalid line");
-		return ERR;
-	}
-	price_str[price_idx] = END_OF_STR;
-	*price = atoi(price_str);
-	idx++;
-	price_idx = 0;
-
-	while ((idx < line_len) && (line[idx] > 47) && (line[idx] < 58)) {
-		capacity_str[price_idx] = line[idx];
-		idx++;
-		price_idx++;
-	}
-	if (capacity_str == NULL) {
-		raiseError(10, __FILE__, __func__, __LINE__, "Guest Name File has an invalid line");
-		return ERR;
-	}
-	capacity_str[price_idx] = END_OF_STR;
-	*capacity = atoi(capacity_str);
-	return TRUE;
-}
-
-int readGuestFile(char dir_path[], Guest_struct guest_arr[MAX_NUM_OF_GUESTS])
-{
-	extern int num_of_guests;
-	int idx = 0, budget = 0, ret_val = TRUE;
-	FILE *fp = NULL;
-	char file_name[11] = "/names.txt", *file_path = NULL, guest_name[MAX_GUEST_NAME_LEN], line[MAX_LINE_LENGTH];
-	if (strcatDynamic(dir_path, file_name, &file_path) == FALSE) {
-		return ERR;
-	}
-	
-	if (fopen_s(&fp, file_path, "r") != FALSE || fp == NULL) {
-		printf("Can't open file: %s\n", file_path);
-		str_safe_free(file_path);
-		raiseError(2, __FILE__, __func__, __LINE__, ERROR_ID_2_IO);
-		return ERR;
-	}
-	str_safe_free(file_path);
-	
-	while (!feof(fp) && num_of_guests <= MAX_NUM_OF_GUESTS) {
-		fgets(line, MAX_LINE_LENGTH, fp);
-		if (strlen(line)<= MIN_LINE_LEN) {
-			break;
-		}
-		if (getGuestDataFromLine(line, guest_name, &budget) != TRUE) {
-			ret_val = ERR;
-			break;
-		}
-		guest_arr[num_of_guests].budget = budget;
-		strcpy_s(guest_arr[num_of_guests].name, MAX_GUEST_NAME_LEN, guest_name);
-		guest_arr[num_of_guests].ID = num_of_guests;
-		guest_arr[num_of_guests].room_number = -1;
-		guest_arr[num_of_guests].status = GUEST_WAIT;
-		guest_arr[num_of_guests].total_number_of_nights = 0;
-		guest_arr[num_of_guests].check_in_day = -1;
-		
-		num_of_guests += 1;
-		strcpy_s(line, MIN_LINE_LEN,"\0");
-	}
-	if (fclose(fp) != FALSE) {
-		raiseError(2, __FILE__, __func__, __LINE__, ERROR_ID_2_IO);
-		printf("closing file FAILED\nFile: %s\n", file_path);
-		return ERR;
-	}
-	return ret_val;
-}
-
-int getGuestDataFromLine(char *line, char guest_name[], int *budget)
-{
-	char space = ' ', budget_str[MAX_LINE_LENGTH];
-	int line_len = 0, idx = 0, budget_idx = 0;
-	if (line == NULL) {
-		raiseError(10, __FILE__, __func__, __LINE__, "Guest Name File has an invalid line");
-		return ERR;
-	}
-
-	line_len = strlen(line);
-	while ((idx < line_len) && line[idx] != space) {
-		guest_name[idx] = line[idx];
-		idx++;
-	}
-	guest_name[idx] = END_OF_STR;
-	idx++;
-
-	while ((idx < line_len) && (line[idx] > 47) && (line[idx] < 58)) {
-		budget_str[budget_idx] = line[idx];
-		idx++;
-		budget_idx++;
-	}
-	if (budget_str == NULL) {
-		raiseError(10, __FILE__, __func__, __LINE__, "Guest Name File has an invalid line");
-		return ERR;
-	}
-	budget_str[budget_idx] = END_OF_STR;
-	*budget = atoi(budget_str);
-
-	return TRUE;
 }
 
 static HANDLE CreateThreadSimple(LPTHREAD_START_ROUTINE p_start_routine,
@@ -815,7 +828,6 @@ Error_And_Close2:
 
 static DWORD hotelManager(LPVOID idx)
 {
-	char mode_in[3] = "IN";
 	char mode_out[4] = "OUT";
 	extern int day_counter;
 	extern guest_counter;
@@ -831,11 +843,6 @@ static DWORD hotelManager(LPVOID idx)
 			case (GUEST_WAIT):
 			{
 				ret_val = checkIn(&guest_arr[guest_idx]);
-				//if (ret_val)
-				//{
-				//	if (!logManager(&guest_arr[guest_idx], g_argv[1], mode_in))
-				//		guest_arr[guest_idx].status = ERR;
-				//}
 				if (ret_val == ERR)
 					guest_arr[guest_idx].status = ERR;
 				break;

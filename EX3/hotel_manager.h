@@ -57,12 +57,11 @@ typedef struct _Room_struct
 
 // Declerations ---------------------------------------------------------------------------------------------------
 
-int runHotelWithThreads();
-
-int createProgramMutexes();
-
-int checkWaitCodeStatus(DWORD wait_code, BOOL singleNotMultiple);
-
+/*
+===================================================================================================================
+							Parsing Data From Room File and From Guest File
+===================================================================================================================
+*/
 void printGuestStruct(Guest_struct guest_arr[MAX_NUM_OF_GUESTS]);
 
 void printRoomStruct();
@@ -72,13 +71,28 @@ int readGuestFile(char dir_path[], Guest_struct guest_arr[MAX_NUM_OF_GUESTS]);
 int readRoomFile(char dir_path[]);
 
 int getRoomDataFromLine(char *line, char room_name[], int *price, int *capacity);
-static HANDLE CreateThreadSimple(LPTHREAD_START_ROUTINE p_start_routine,
-	LPVOID p_thread_parameters,
-	LPDWORD p_thread_id);
 
 int readGuestFile(char dir_path[], Guest_struct guest_arr[MAX_NUM_OF_GUESTS]);
 
 int getGuestDataFromLine(char *line, char guest_name[], int *budget);
+
+/*
+===================================================================================================================
+							Threads, Mutexes and Semaphores handler - START
+===================================================================================================================
+*/
+int checkWaitCodeStatus(DWORD wait_code, BOOL singleNotMultiple);
+
+int createProgramMutexes();
+
+int createProgramSemaphores();
+
+int runHotelWithThreads();
+
+static HANDLE CreateThreadSimple(LPTHREAD_START_ROUTINE p_start_routine,
+	LPVOID p_thread_parameters,
+	LPDWORD p_thread_id);
+
 
 /*
 ===================================================================================================================
@@ -103,10 +117,6 @@ int logManager(Guest_struct *p_guest, char *output_dir_path, char *mode);
 
 int getRoomForGuest(Guest_struct *p_guest);
 
-int registerRoomParllel(Guest_struct *p_guest, int room_idx);
-
-int isRoomAvailableWrapper(Guest_struct *p_guest);
-
 int isRoomAvaiable(Room_struct p_room);
 
 void updateBudget(Guest_struct *p_guest);
@@ -117,7 +127,16 @@ void updateCustomerStatus(Guest_struct *p_guest, int status);
 
 void guestCheckInProcedure(Guest_struct *p_guest);
 
+int registerRoomParllel(Guest_struct *p_guest, int room_idx);
+
+int isRoomAvailableWrapper(Guest_struct *p_guest);
+
 int checkIn(Guest_struct *p_guest);
+
+
+
+
+
 
 
 /*
