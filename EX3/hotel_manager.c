@@ -265,7 +265,7 @@ int readRoomFile(char dir_path[])
 	while (!feof(fp) && num_of_rooms <= MAX_NUM_OF_ROOMS) {
 		fgets(line, MAX_LINE_LENGTH, fp);
 		if (strlen(line) <= MIN_LINE_LEN) {
-			continue;
+			break;
 		}
 		if (getRoomDataFromLine(line, room_name, &price, &capacity) != TRUE) {
 			ret_val = ERR;
@@ -356,7 +356,7 @@ int readGuestFile(char dir_path[], Guest_struct guest_arr[MAX_NUM_OF_GUESTS])
 	while (!feof(fp) && num_of_guests <= MAX_NUM_OF_GUESTS) {
 		fgets(line, MAX_LINE_LENGTH, fp);
 		if (strlen(line)<= MIN_LINE_LEN) {
-			continue;
+			break;
 		}
 		if (getGuestDataFromLine(line, guest_name, &budget) != TRUE) {
 			ret_val = ERR;
@@ -601,7 +601,7 @@ void updateRoomAvaiabilty(Guest_struct *p_guest)
 	if (p_guest->budget==0)
 	{
 		room_arr[p_guest->room_number].next_day_availablity++;
-		updateCustomerStatus(p_guest, GUEST_CHECK_OUT);
+		updateCustomerStatus(p_guest, GUEST_CHECKED_IN_CHECKED_OUT);
 	}
 }
 
@@ -615,7 +615,7 @@ void guestCheckInProcedure(Guest_struct *p_guest)
 	/* Update: room avaiablity, room avaiablity next day, customer budget, customer status */
 	/* update budget */
 	updateBudget(p_guest);
-	updateCustomerStatus(p_guest, GUEST_REGISTERED);
+	updateCustomerStatus(p_guest, GUEST_CHECKED_IN);
 	updateRoomAvaiabilty(p_guest);
 }
 
@@ -718,10 +718,26 @@ int checkIfAllGuestDone()
 	extern Guest_struct guest_arr[MAX_NUM_OF_GUESTS];
 	extern int num_of_guests;
 	extern int status;
+	extern char **g_argv;
+	char mode_in[3] = "IN";
 	int num_of_guest_left = 0;
 	for (int i = 0; i < num_of_guests; i++) {
 		if (guest_arr[i].status == GUEST_LEFT)
 			num_of_guest_left += 1;
+		else if (guest_arr[i].status == GUEST_CHECKED_IN) {
+			if (!logManager(&guest_arr[i], g_argv[1], mode_in)) {
+				status = FALSE;
+				return ERR;
+			}
+			guest_arr[i].status = GUEST_REGISTERED;
+		}
+		else if (guest_arr[i].status == GUEST_CHECKED_IN_CHECKED_OUT) {
+			if (!logManager(&guest_arr[i], g_argv[1], mode_in)) {
+				status = FALSE;
+				return ERR;
+			}
+			guest_arr[i].status = GUEST_CHECK_OUT;
+		}
 		else if (guest_arr[i].status == ERR) {
 			status = FALSE;
 			return ERR;
@@ -815,12 +831,12 @@ static DWORD hotelManager(LPVOID idx)
 			case (GUEST_WAIT):
 			{
 				ret_val = checkIn(&guest_arr[guest_idx]);
-				if (ret_val)
-				{
-					if (!logManager(&guest_arr[guest_idx], g_argv[1], mode_in))
-						guest_arr[guest_idx].status = ERR;
-				}
-				else if (ret_val == ERR)
+				//if (ret_val)
+				//{
+				//	if (!logManager(&guest_arr[guest_idx], g_argv[1], mode_in))
+				//		guest_arr[guest_idx].status = ERR;
+				//}
+				if (ret_val == ERR)
 					guest_arr[guest_idx].status = ERR;
 				break;
 			}

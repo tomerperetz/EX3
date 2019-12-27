@@ -23,6 +23,8 @@ Caculate student grade main functions
 #define GUEST_REGISTERED 1
 #define GUEST_CHECK_OUT 2
 #define GUEST_LEFT 3
+#define GUEST_CHECKED_IN 4
+#define GUEST_CHECKED_IN_CHECKED_OUT 5
 #define ROOM_NUM_0 0
 #define ROOM_NUM_1 1
 #define ROOM_NUM_2 2
