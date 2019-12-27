@@ -46,8 +46,8 @@ int main(int argc, char *argv[])
 	}
 	printRoomStruct();
 	printGuestStruct(guest_arr);
-	//tot_num_of_days = runHotelWithThreads(&guest_arr);
-	//if (tot_num_of_days != ERR)
-	//	printf("All Guests checked out after %d days\nProgram ended successfully!\n", tot_num_of_days-1);
+	tot_num_of_days = runHotelWithThreads(&guest_arr);
+	if (tot_num_of_days != ERR)
+		printf("All Guests checked out after %d days\nProgram ended successfully!\n", tot_num_of_days-1);
 	return 0;
 }
