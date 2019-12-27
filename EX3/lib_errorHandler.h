@@ -35,6 +35,8 @@ static const char ERROR_ID_6_THREADS[100] = \
 "THREADS ERROR: Error occurred in threads creating function. please restart the program.\n";
 static const char ERROR_ID_7_OTHER[100] = \
 " Error occurred.\n";
+static const char ERROR_ID_8_INTER_THREAD[100] = \
+"Error occurred in one or more threads.\n ";
 
 // Declerations -------------------------------------------------------------------------------------------------------
 

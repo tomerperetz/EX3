@@ -58,6 +58,8 @@ int runHotelWithThreads();
 
 int createProgramMutexes();
 
+int checkWaitCodeStatus(DWORD wait_code, BOOL singleNotMultiple);
+
 void printGuestStruct(Guest_struct guest_arr[MAX_NUM_OF_GUESTS]);
 
 void printRoomStruct();
@@ -81,7 +83,7 @@ int getGuestDataFromLine(char *line, char guest_name[], int *budget);
 ===================================================================================================================
 */
 
-int writeMessegeBuffer(Guest_struct *p_guest, char *buffer, int max_size, char *mode);
+void writeMessegeBuffer(Guest_struct *p_guest, char *buffer, int max_size, char *mode);
 
 int fileExist(char *filename);
 
@@ -139,7 +141,7 @@ void checkOut(Guest_struct *p_guest);
 											EndOfDay - START
 ===================================================================================================================
 */
-void checkIfAllGuestDone();
+int checkIfAllGuestDone();
 int endOfBusinessDay(Guest_struct *p_guest);
 
 /*
@@ -148,4 +150,4 @@ int endOfBusinessDay(Guest_struct *p_guest);
 ===================================================================================================================
 */
 
-int hotelManager(LPVOID p_guest);
+static DWORD hotelManager(LPVOID p_guest);

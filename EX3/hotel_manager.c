@@ -7,7 +7,6 @@ static HANDLE room_mutex[MAX_NUM_OF_ROOMS];
 static HANDLE file_mutex;
 static HANDLE end_of_day_mutex;
 static HANDLE end_of_business_day;
-static HANDLE end_of_day;
 int day_counter = 1;
 int num_of_guests = 0;
 int num_of_rooms = 0;
@@ -16,7 +15,7 @@ int end_of_day_guest_counter = 0;
 int status = TRUE;
 // Functions ------------------------------------------------------------------------------------------------------>
 
-int checkWaitCodeStatus(DWORD wait_code) {
+int checkWaitCodeStatus(DWORD wait_code, BOOL singleNotMultiple) {
 	int retVal1 = ERR;
 	DWORD errorMessageID;
 	switch (wait_code)
@@ -40,8 +39,10 @@ int checkWaitCodeStatus(DWORD wait_code) {
 		break;
 	}
 	// special case that also allowed
-	if (wait_code >= WAIT_OBJECT_0 && wait_code <= WAIT_OBJECT_0 + num_of_guests - 1) {
-		retVal1 = TRUE;
+	if (singleNotMultiple == FALSE){
+		if (wait_code == WAIT_OBJECT_0 + num_of_guests - 1) {
+			retVal1 = TRUE;
+		}
 	}
 	return retVal1;
 }
@@ -87,19 +88,10 @@ int createProgramSemaphores()
 	extern num_of_guests;
 	int ret_val = TRUE;
 	end_of_business_day = NULL;
-	end_of_day = NULL;
 	end_of_business_day = CreateSemaphore(NULL, 0, num_of_guests, NULL);
-
 	if (end_of_business_day == NULL) {
-		ret_val = ERR;  goto Main_cleanup;
-	}
-	end_of_day = CreateSemaphore(NULL, 0, 1, NULL);
-	if (end_of_day == NULL) {
-		ret_val = ERR;  goto Main_cleanup;
-	}
-Main_cleanup:
-	if (ret_val == ERR) {
 		raiseError(6, __FILE__, __func__, __LINE__, "Mutex creation failed\n");
+		ret_val = ERR;
 	}
 	return ret_val;
 }
@@ -153,7 +145,7 @@ int runHotelWithThreads()
 	wait_code = WaitForMultipleObjects(num_of_guests, p_thread_handles, TRUE, INFINITE);
 
 	/* WAIT CODE cases*/
-	retVal1 = checkWaitCodeStatus(wait_code);
+	retVal1 = checkWaitCodeStatus(wait_code, FALSE);
 	// Checks if the wait code was WAIT_OBJECT_0, 
 	if (retVal1 == ERR) {
 		retVal1 = ERR;
@@ -171,17 +163,15 @@ int runHotelWithThreads()
 			goto Main_Cleanup_2;
 		}
 		// checks exit code
-		if (exit_code == ERR)
-		{
-			raiseError(6, __FILE__, __func__, __LINE__, ERROR_ID_6_THREADS);
-			printf("Error in thread: %d. Exit code: %d\n", i, exit_code);
+		if (exit_code == ERR) {
+			raiseError(6, __FILE__, __func__, __LINE__, ERROR_ID_8_INTER_THREAD);
+			printf("An Error occured in thread: %d. Exit code is: %d\nClosing the program and all resources...\n", i, exit_code);
 			retVal1 = ERR;
 			goto Main_Cleanup_2;
 		}
-		if (exit_code != TRUE)
-		{
-			raiseError(6, __FILE__, __func__, __LINE__, ERROR_ID_6_THREADS);
-			printf("Details: Error in thread: %d. Exit code: %d\n", i, exit_code);
+		if (exit_code != TRUE) {
+			raiseError(6, __FILE__, __func__, __LINE__, ERROR_ID_8_INTER_THREAD);
+			printf("Details: Error in thread: %d. Exit code: %d\nClosing the program and all resources...\n", i, exit_code);
 			retVal1 = ERR;
 			goto Main_Cleanup_2;
 		}
@@ -202,9 +192,9 @@ Main_Cleanup_2:
 	closeHandles(room_mutex, MAX_NUM_OF_ROOMS);
 	closeHandles(p_thread_handles, num_of_guests);
 Main_Cleanup_1:
-	if (end_of_day != NULL) CloseHandle(end_of_day);
 	if (end_of_business_day != NULL) CloseHandle(end_of_business_day);
-	return retVal1;
+	if (retVal1 != TRUE) return ERR;
+	return day_counter;
 }
 
 void printGuestStruct(Guest_struct guest_arr[MAX_NUM_OF_GUESTS]) {
@@ -465,14 +455,11 @@ static HANDLE CreateThreadSimple(LPTHREAD_START_ROUTINE p_start_routine,
 ===================================================================================================================
 */
 
-int writeMessegeBuffer(Guest_struct *p_guest, char *buffer, int max_size, char *mode)
+void writeMessegeBuffer(Guest_struct *p_guest, char *buffer, int max_size, char *mode)
 {
 	extern int day_counter;
 	extern Room_struct room_arr[MAX_NUM_OF_ROOMS];
-
-
 	sprintf_s(buffer, max_size, "%s %s %s %d\n", room_arr[p_guest->room_number].name, p_guest->name, mode, day_counter);
-	return TRUE;
 }
 
 int fileExist(char *filename)
@@ -487,7 +474,7 @@ int writeToLog(char *output_dir_path, char *content)
 {
 	FILE *fp = NULL;
 	char *file_path = NULL;
-	char file_name[12] = "roomLog.txt";
+	char file_name[14] = "/roomLog.txt";
 	int file_exist = 0;
 	if (strcatDynamic(output_dir_path, file_name, &file_path) != TRUE)
 		return ERR;
@@ -537,16 +524,19 @@ int logManager(Guest_struct *p_guest, char *output_dir_path, char *mode)
 	int max_size = MAX_ROOM_NAME_LEN + MAX_GUEST_NAME_LEN + 10;
 	char buffer[MAX_ROOM_NAME_LEN + MAX_GUEST_NAME_LEN + 10];
 	DWORD wait_code;
-	int release_code =TRUE;
-
+	int release_code = TRUE, ret_val = TRUE;
 	wait_code = WaitForSingleObject(file_mutex, INFINITE);
-	if (checkWaitCodeStatus(wait_code) != TRUE)
-		return ERR;
-	
+	if (checkWaitCodeStatus(wait_code, TRUE) != TRUE) {
+		ret_val = ERR;
+		goto Realese_And_Quit;
+	}
 	writeMessegeBuffer(p_guest, buffer, max_size, mode);
-	if (writeToLog(output_dir_path, buffer) == ERR)
-		return ERR;
+	if (writeToLog(output_dir_path, buffer) == ERR) {
+		ret_val = ERR;
+	}
+Realese_And_Quit:
 	release_code = ReleaseMutex(file_mutex);
+	if (ret_val == ERR) return ERR;
 	if (release_code == FALSE)
 		return ERR;
 
@@ -628,12 +618,15 @@ int registerRoomParllel(Guest_struct *p_guest, int room_idx)
 	int release_code = TRUE, ret_val = FALSE;
 
 	wait_code = WaitForSingleObject(room_mutex[room_idx], INFINITE);
-	if (checkWaitCodeStatus(wait_code) != TRUE)
-		return ERR;
+	if (checkWaitCodeStatus(wait_code, TRUE) != TRUE) {
+		ret_val = ERR;
+		goto Release_And_Quit;
+	}
 	// Critic Code
 	ret_val = (isRoomAvailableWrapper(p_guest));
-
+Release_And_Quit:
 	release_code = ReleaseMutex(room_mutex[room_idx]);
+	if (ret_val == ERR) return ERR;
 	if (release_code == FALSE) {
 		printf("release code is 0");
 		raiseError(7, __FILE__, __func__, __LINE__, ERROR_ID_7_OTHER);
@@ -712,37 +705,8 @@ void checkOut(Guest_struct *p_guest)
 											EndOfDay - START
 ===================================================================================================================
 */
-int endOfDayBuffer(BOOL endOfDayFlag)
-{
-	extern int guest_counter;
-	extern int end_of_day_guest_counter;
-	DWORD wait_code;
-	LONG previous_count;
-	int release_res = 0, ret_val = TRUE;
 
-	wait_code = WaitForSingleObject(end_of_day_mutex, INFINITE);
-	if (checkWaitCodeStatus(wait_code) != TRUE)
-		return ERR;
-	// Critic Code
-	end_of_day_guest_counter++;
-	if (end_of_day_guest_counter == guest_counter) {
-		if (endOfDayFlag == TRUE) day_counter++;
-		release_res = ReleaseSemaphore(end_of_business_day, guest_counter, &previous_count);
-		if (release_res == FALSE) return ERR;
-
-		
-	}
-	release_res = ReleaseMutex(end_of_day_mutex);
-	if (release_res == FALSE) return ERR;
-	wait_code = WaitForSingleObject(end_of_business_day, INFINITE);
-	if (checkWaitCodeStatus(wait_code) != TRUE)
-		return ERR;
-	end_of_day_guest_counter = 0;
-
-	return ret_val;
-}
-
-void checkIfAllGuestDone()
+int checkIfAllGuestDone()
 {
 	extern Guest_struct guest_arr[MAX_NUM_OF_GUESTS];
 	extern int num_of_guests;
@@ -751,9 +715,15 @@ void checkIfAllGuestDone()
 	for (int i = 0; i < num_of_guests; i++) {
 		if (guest_arr[i].status == GUEST_LEFT)
 			num_of_guest_left += 1;
+		else if (guest_arr[i].status == ERR) {
+			status = FALSE;
+			return ERR;
+		}
+
 	}
 	if (num_of_guest_left == num_of_guests)
 		status = FALSE;
+	return TRUE;
 }
 
 int endOfBusinessDay(Guest_struct *p_guest)
@@ -768,8 +738,11 @@ int endOfBusinessDay(Guest_struct *p_guest)
 	int release_res = 0, ret_val = TRUE, num_of_guest_that_left = 0;
 
 	wait_code = WaitForSingleObject(end_of_day_mutex, INFINITE);
-	if (checkWaitCodeStatus(wait_code) != TRUE)
-		return ERR;
+	if (checkWaitCodeStatus(wait_code, TRUE) != TRUE) {
+		ret_val = ERR;
+		goto Error_And_Close;
+	}
+	
 	// Critic Code
 
 	end_of_day_guest_counter++;
@@ -779,22 +752,34 @@ int endOfBusinessDay(Guest_struct *p_guest)
 			/* reset next day availabilty */
 			room_arr[i].next_day_availablity = 0;
 		}
-		checkIfAllGuestDone();
+		ret_val = checkIfAllGuestDone();
+		if (ret_val == ERR) goto Error_And_Close;
 		day_counter++;
-
+		end_of_day_guest_counter = 0;
 		release_res = ReleaseSemaphore(end_of_business_day, guest_counter, &previous_count);
-		if (release_res == FALSE) return ERR;
+		if (release_res == FALSE) goto Error_And_Close;
 
 	}
 
 	/* End of critic Code Release Mutex */
+
+Error_And_Close:
+	if (ret_val == ERR) {
+		end_of_day_guest_counter = 0;
+		status = FALSE;
+	}
 	release_res = ReleaseMutex(end_of_day_mutex);
-
+	if (release_res == FALSE || ret_val == ERR) { 
+		ret_val = ERR; goto Error_And_Close2;
+	}
 	wait_code = WaitForSingleObject(end_of_business_day, INFINITE);
-	if (checkWaitCodeStatus(wait_code) != TRUE)
+	if (checkWaitCodeStatus(wait_code, TRUE) != TRUE)
 		return ERR;
-	end_of_day_guest_counter = 0;
 
+Error_And_Close2:
+	if (ret_val == ERR) {
+		release_res = ReleaseSemaphore(end_of_business_day, guest_counter, &previous_count);
+	}
 	return ret_val;
 
 }
@@ -805,7 +790,7 @@ int endOfBusinessDay(Guest_struct *p_guest)
 ===================================================================================================================
 */
 
-int hotelManager22(LPVOID idx)
+static DWORD hotelManager(LPVOID idx)
 {
 	char mode_in[3] = "IN";
 	char mode_out[4] = "OUT";
@@ -822,84 +807,37 @@ int hotelManager22(LPVOID idx)
 		{
 			case (GUEST_WAIT):
 			{
-				printf("%s trys to check in day %d\n", guest_arr[guest_idx].name, day_counter);
 				ret_val = checkIn(&guest_arr[guest_idx]);
 				if (ret_val)
 				{
 					if (!logManager(&guest_arr[guest_idx], g_argv[1], mode_in))
-						return ERR;
+						guest_arr[guest_idx].status = ERR;
 				}
 				else if (ret_val == ERR)
-					return ERR;
+					guest_arr[guest_idx].status = ERR;
 				break;
 			}
 			case (GUEST_REGISTERED):
 			{
-				printf("%s stays one more night day %d\n", guest_arr[guest_idx].name, day_counter);
 				oneMoreNight(&guest_arr[guest_idx]);
 				break;
 			}
 			case (GUEST_CHECK_OUT):
 			{
-				printf("%s trys to check out day %d\n", guest_arr[guest_idx].name, day_counter);
 				checkOut(&guest_arr[guest_idx]);
 				if (!logManager(&guest_arr[guest_idx], g_argv[1], mode_out))
-					return ERR;
+					guest_arr[guest_idx].status = ERR;
 				break;
 			}
 			case (GUEST_LEFT):
 			{
-				printf("%s is Done day %d\n", guest_arr[guest_idx].name, day_counter);
 				break;
 			}	
 		}
 		ret_val = endOfBusinessDay(&guest_arr[guest_idx]);
 		if (ret_val != TRUE) return ERR;
 	}
-	return TRUE;
+
+	return ret_val;
 }
 
-int hotelManager(LPVOID idx)
-{
-	char mode_in[3] = "IN";
-	char mode_out[4] = "OUT";
-	extern int day_counter;
-	extern guest_counter;
-	extern char **g_argv;
-	extern Guest_struct guest_arr[MAX_NUM_OF_GUESTS];
-	extern int status;
-	int guest_idx = 0, ret_val = ERR;
-	guest_idx = (int)idx;
-
-	while (status) {
-		if (guest_arr[guest_idx].status == GUEST_WAIT) {
-			printf("%s trys to check in day %d\n", guest_arr[guest_idx].name, day_counter);
-			ret_val = checkIn(&guest_arr[guest_idx]);
-			if (ret_val)
-			{
-				if (!logManager(&guest_arr[guest_idx], g_argv[1], mode_in))
-					return ERR;
-			}
-			else if (ret_val == ERR)
-				return ERR;
-		}
-		else if (guest_arr[guest_idx].status == GUEST_REGISTERED) {
-			printf("%s stays one more night day %d\n", guest_arr[guest_idx].name, day_counter);
-			oneMoreNight(&guest_arr[guest_idx]);
-		}
-
-		else if (guest_arr[guest_idx].status == GUEST_CHECK_OUT) {
-			printf("%s trys to check out day %d\n", guest_arr[guest_idx].name, day_counter);
-			checkOut(&guest_arr[guest_idx]);
-			if (!logManager(&guest_arr[guest_idx], g_argv[1], mode_out))
-				return ERR;
-			
-		}
-		else if (guest_arr[guest_idx].status == GUEST_CHECK_OUT) {
-			printf("%s is Done day %d\n", guest_arr[guest_idx].name, day_counter);
-		}
-		ret_val = endOfBusinessDay(&guest_arr[guest_idx]);
-		if (ret_val != TRUE) return ERR;
-	}
-	return TRUE;
-}
