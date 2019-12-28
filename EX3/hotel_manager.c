@@ -22,7 +22,14 @@ int status = TRUE;
 */
 
 
-void printGuestStruct(Guest_struct guest_arr[MAX_NUM_OF_GUESTS]) {
+void printGuestStruct(Guest_struct guest_arr[MAX_NUM_OF_GUESTS]) 
+{
+	/*
+	Description: Print guest struct. for debugging purposes.
+	parameters:
+			 - Guest_struct guest_arr[MAX_NUM_OF_GUESTS] - guest struct array
+	Returns:void
+	*/
 	extern int num_of_guests;
 	int idx = 0;
 	for (idx = 0; idx < num_of_guests; idx++) {
@@ -46,6 +53,12 @@ void printGuestStruct(Guest_struct guest_arr[MAX_NUM_OF_GUESTS]) {
 
 void printRoomStruct()
 {
+	/*
+	Description: Print Room struct. for debugging purposes.
+	parameters:
+			 - none. room struct is global variable.
+	Returns:void
+	*/
 	extern Room_struct room_arr[MAX_NUM_OF_ROOMS];
 	extern int num_of_rooms;
 	int idx = 0;
@@ -72,6 +85,12 @@ void printRoomStruct()
 
 int readRoomFile(char dir_path[])
 {
+	/*
+	Description: read room list file and init room structs.
+	parameters:
+			 - char dir_path[] - input dir path recieved from user.
+	Returns: TRUE if succeded, ERR o.w
+	*/
 	extern Room_struct room_arr[MAX_NUM_OF_ROOMS];
 	extern int num_of_rooms;
 	FILE *fp = NULL;
@@ -118,6 +137,15 @@ int readRoomFile(char dir_path[])
 
 int getRoomDataFromLine(char *line, char room_name[], int *price, int *capacity)
 {
+	/*
+	Description: parse line aed from file to variables.
+	parameters:
+			 - char *line - line from file
+			 - char room_name[] - empty room variable to init
+			 - int *price - pointer to price int
+			 - int *capacity - pointer to int capcity
+	Returns: TRUE if succeded, ERR o.w
+	*/
 	char space = ' ', price_str[MAX_LINE_LENGTH], capacity_str[MAX_LINE_LENGTH];
 	int line_len = 0, idx = 0, price_idx = 0;
 	if (line == NULL) {
@@ -162,6 +190,13 @@ int getRoomDataFromLine(char *line, char room_name[], int *price, int *capacity)
 
 int readGuestFile(char dir_path[], Guest_struct guest_arr[MAX_NUM_OF_GUESTS])
 {
+	/*
+	Description: read guest file and init guest struct
+	parameters:
+			 - char dir_path[] - input dir path recieved from user.
+			 - Guest_struct guest_arr[MAX_NUM_OF_GUESTS] - array of guest struct variables
+	Returns: TRUE if succeded, ERR o.w
+	*/
 	extern int num_of_guests;
 	int idx = 0, budget = 0, ret_val = TRUE;
 	FILE *fp = NULL;
@@ -208,6 +243,14 @@ int readGuestFile(char dir_path[], Guest_struct guest_arr[MAX_NUM_OF_GUESTS])
 
 int getGuestDataFromLine(char *line, char guest_name[], int *budget)
 {
+	/*
+	Description: parse line from file to destination variables.
+	parameters:
+			 - char *line - line from file
+			 - char guest_name[] - empty guest name variable to init
+			 - int *budget - pointer to budget int
+	Returns: TRUE if succeded, ERR o.w
+	*/
 	char space = ' ', budget_str[MAX_LINE_LENGTH];
 	int line_len = 0, idx = 0, budget_idx = 0;
 	if (line == NULL) {
@@ -245,6 +288,15 @@ int getGuestDataFromLine(char *line, char guest_name[], int *budget)
 */
 
 int checkWaitCodeStatus(DWORD wait_code, BOOL singleNotMultiple) {
+	/*
+	Description: check wait code status from waitForMultipleObject o rwaitForSingleObject function
+	parameters:
+			 - DWORD wait_code - wait code recieved
+			 - BOOL singleNotMultiple - TRUE for multiple, FALSE for single
+
+	Returns: TRUE if succeded, ERR o.w
+	*/
+
 	int retVal1 = ERR;
 	DWORD errorMessageID;
 	switch (wait_code)
@@ -278,6 +330,13 @@ int checkWaitCodeStatus(DWORD wait_code, BOOL singleNotMultiple) {
 
 int createProgramMutexes()
 {
+	/*
+	Description: init global mutexes
+	parameters:
+			 - none
+	Returns: TRUE if succeded, ERR o.w
+	*/
+
 	int retVal = TRUE;
 	// initialization
 	for (int i = 0; i < MAX_NUM_OF_ROOMS; i++) {
@@ -314,6 +373,12 @@ Main_cleanup:
 
 int createProgramSemaphores()
 {
+	/*
+		Description: init global semaphores
+		parameters:
+				 - none
+		Returns: TRUE if succeded, ERR o.w
+	*/
 	extern num_of_guests;
 	int ret_val = TRUE;
 	end_of_business_day = NULL;
@@ -327,15 +392,15 @@ int createProgramSemaphores()
 
 int runHotelWithThreads()
 {
+	/*
+	Description: run hotel manager using threades
+	parameters:
+			 - none
+	Returns: TRUE if succeded, ERR o.w
+	*/
 	extern int num_of_guests;
 	extern int guest_counter;
-	/*
-	Description: read a list of files content into variables using threads.
-	parameters:
-			 - char **files_list - files list.
-			 -  int *grades_list - empty grades array.
-	Return: TRUE if succeded, ERR o.w
-	*/
+
 	HANDLE p_thread_handles[MAX_NUM_OF_GUESTS];
 	DWORD p_thread_ids[MAX_NUM_OF_GUESTS];
 	DWORD num_of_threads = MAX_NUM_OF_GUESTS;
@@ -477,6 +542,15 @@ static HANDLE CreateThreadSimple(LPTHREAD_START_ROUTINE p_start_routine,
 
 void writeMessegeBuffer(Guest_struct *p_guest, char *buffer, int max_size, char *mode)
 {
+	/*
+	Description: write message buffer using given variables
+	parameters:
+			 - Guest_struct *p_guest - guest messeage reffers to
+			 - char *buffer - empty buffer, message will be written into
+			 - int max_size - max mesage size
+			 - char *mode - IN/OUT
+	Returns: VOID
+	*/
 	extern int day_counter;
 	extern Room_struct room_arr[MAX_NUM_OF_ROOMS];
 	sprintf_s(buffer, max_size, "%s %s %s %d\n", room_arr[p_guest->room_number].name, p_guest->name, mode, day_counter);
@@ -484,6 +558,12 @@ void writeMessegeBuffer(Guest_struct *p_guest, char *buffer, int max_size, char 
 
 int fileExist(char *filename)
 {
+	/*
+	Description: check if given path to a file exists.
+	parameters:
+			 - char *filename - path to file
+	Returns: TRUE if exists
+	*/
 	struct stat buffer;
 	if (stat(filename, &buffer) == 0)
 		return FALSE;
@@ -492,6 +572,14 @@ int fileExist(char *filename)
 
 int writeToLog(char *output_dir_path, char *content)
 {
+	/*
+	Description: write guest status to log file
+	parameters:
+			 - char *output_dir_path - destination folder
+			 - char *content - content to be written
+
+	Returns: TRUE if succeded
+	*/
 	FILE *fp = NULL;
 	char *file_path = NULL;
 	char file_name[14] = "/roomLog.txt";
@@ -540,6 +628,14 @@ int writeToLog(char *output_dir_path, char *content)
 
 int logManager(Guest_struct *p_guest, char *output_dir_path, char *mode)
 {
+	/*
+	Description: write guest status to log file
+	parameters:
+			 - Guest_struct *p_guest - guest struct
+			 - char *output_dir_path - destination folder
+			 - char *mode - IN/OUT
+	Returns: TRUE if succeded
+	*/
 
 	int max_size = MAX_ROOM_NAME_LEN + MAX_GUEST_NAME_LEN + 10;
 	char buffer[MAX_ROOM_NAME_LEN + MAX_GUEST_NAME_LEN + 10];
@@ -572,7 +668,12 @@ Realese_And_Quit:
 
 int getRoomForGuest(Guest_struct *p_guest)
 {
-	/* Init room type for customer according to his budget */
+	/*
+	Description: find room suitable to customer budget
+	parameters:
+			 - Guest_struct *p_guest - guest struct
+	Returns: TRUE if succeded
+	*/
 	extern Room_struct room_arr[MAX_NUM_OF_ROOMS];
 	extern int num_of_rooms;
 	extern int day_counter;
@@ -592,7 +693,12 @@ int getRoomForGuest(Guest_struct *p_guest)
 
 int isRoomAvaiable(Room_struct p_room)
 {
-	/* Check if room is currently avaiable */
+	/*
+	Description: Check if room is currently avaiable
+	parameters:
+			 - Room_struct p_room - room struct
+	Returns: TRUE if succeded
+	*/
 	if (p_room.availablity > 0)
 		return TRUE;
 	return FALSE;
@@ -600,13 +706,26 @@ int isRoomAvaiable(Room_struct p_room)
 
 void updateBudget(Guest_struct *p_guest)
 {
-	/* decrease customer budget */
+	/*
+	Description:  decrease customer budget
+	parameters:
+			 - Guest_struct *p_guest - guest struct
+	Returns: VOID
+	*/
+
 	extern Room_struct room_arr[MAX_NUM_OF_ROOMS];
 	p_guest->budget = p_guest->budget - room_arr[p_guest->room_number].price_pp;
 }
 
 void updateRoomAvaiabilty(Guest_struct *p_guest)
 {
+	/*
+	Description:  update room availabilty status
+	parameters:
+			 - Guest_struct *p_guest - guest struct
+	Returns: VOID
+	*/
+
 	extern Room_struct room_arr[MAX_NUM_OF_ROOMS];
 	
 	/* Update for tonight */
@@ -620,12 +739,24 @@ void updateRoomAvaiabilty(Guest_struct *p_guest)
 
 void updateCustomerStatus(Guest_struct *p_guest, int status)
 {
+	/*
+	Description:  Update customer status
+	parameters:
+			 - Guest_struct *p_guest - guest struct
+			 - int status - new status
+	Returns: VOID
+	*/
 	p_guest->status = status;
 }
 
 void guestCheckInProcedure(Guest_struct *p_guest)
-{
-	/* Update: room avaiablity, room avaiablity next day, customer budget, customer status */
+{	
+	/*
+	Description:  room avaiablity, room avaiablity next day, customer budget, customer statu
+	parameters:
+			 - Guest_struct *p_guest - guest struct
+	Returns: VOID
+	*/
 	/* update budget */
 	updateBudget(p_guest);
 	updateCustomerStatus(p_guest, GUEST_CHECKED_IN);
@@ -634,6 +765,14 @@ void guestCheckInProcedure(Guest_struct *p_guest)
 
 int registerRoomParllel(Guest_struct *p_guest, int room_idx)
 {
+	/*
+	Description:  register guest to room. can handle different rooms parallel.
+	parameters:
+			 - Guest_struct *p_guest - guest struct
+			 - int room_idx - room index 
+	Returns: TRUE if succeded.
+	*/
+
 	DWORD wait_code;
 	int release_code = TRUE, ret_val = FALSE;
 
@@ -642,7 +781,7 @@ int registerRoomParllel(Guest_struct *p_guest, int room_idx)
 		ret_val = ERR;
 		goto Release_And_Quit;
 	}
-	// Critic Code
+	// Critical Code
 	ret_val = (isRoomAvailableWrapper(p_guest));
 Release_And_Quit:
 	release_code = ReleaseMutex(room_mutex[room_idx]);
@@ -657,6 +796,13 @@ Release_And_Quit:
 
 int isRoomAvailableWrapper(Guest_struct *p_guest)
 {
+	/*
+	Description:  a wrapper for checking in function.
+	parameters:
+			 - Guest_struct *p_guest - guest struct
+	Returns: TRUE if customer checked in.
+	*/
+
 	/* check if room currently avaiable */
 	if (isRoomAvaiable(room_arr[p_guest->room_number]))
 	{
@@ -669,6 +815,13 @@ int isRoomAvailableWrapper(Guest_struct *p_guest)
 
 int checkIn(Guest_struct *p_guest)
 {
+	/*
+	Description:  try to check in guest
+	parameters:
+			 - Guest_struct *p_guest - guest struct
+	Returns: TRUE if customer checked in.
+	*/
+
 	int ret_val = ERR;
 	if (p_guest->room_number == ERR)
 	{
@@ -695,6 +848,13 @@ int checkIn(Guest_struct *p_guest)
 
 void CheckBudget(Guest_struct *p_guest)
 {
+	/*
+	Description: Check user balance. move to check out status if he is out of money.
+	parameters:
+			 - Guest_struct *p_guest - guest struct
+	Returns: VOID
+	*/
+
 	/*  if he has no more budget update status and availabilty for next day */
 	if (p_guest->budget == 0)
 	{
@@ -705,6 +865,12 @@ void CheckBudget(Guest_struct *p_guest)
 
 void oneMoreNight(Guest_struct *p_guest)
 {
+	/*
+	Description: charge user for one more night.
+	parameters:
+			 - Guest_struct *p_guest - guest struct
+	Returns: VOID
+	*/
 	updateBudget(p_guest);
 	CheckBudget(p_guest);
 }
@@ -718,6 +884,12 @@ void oneMoreNight(Guest_struct *p_guest)
 
 void checkOut(Guest_struct *p_guest)
 {
+	/*
+	Description: update customer status to GUEST_LEFT mode.
+	parameters:
+			 - Guest_struct *p_guest - guest struct
+	Returns: VOID
+	*/
 	updateCustomerStatus(p_guest, GUEST_LEFT);
 }
 /*
@@ -728,6 +900,12 @@ void checkOut(Guest_struct *p_guest)
 
 int checkIfAllGuestDone()
 {
+	/*
+	Description: Check if all guests left. if so program is done.
+	parameters:
+			 - Guest_struct *p_guest - guest struct
+	Returns: TRUE if al guests are done.
+	*/
 	extern Guest_struct guest_arr[MAX_NUM_OF_GUESTS];
 	extern int num_of_guests;
 	extern int status;
@@ -764,6 +942,13 @@ int checkIfAllGuestDone()
 
 int endOfBusinessDay(Guest_struct *p_guest)
 {
+	/*
+	Description: Check if business day is over - all guests are handled for today, make preperations for tmrw - update room avaiablity etc.
+	parameters:
+			 - Guest_struct *p_guest - guest struct
+	Returns: ret val - TRUE id succeded, ERR for error.
+	*/
+
 	extern Room_struct room_arr[MAX_NUM_OF_ROOMS];
 	extern int day_counter;
 	extern int num_of_rooms;
@@ -828,6 +1013,13 @@ Error_And_Close2:
 
 static DWORD hotelManager(LPVOID idx)
 {
+	/*
+	Description: hotel manager - handle customre according to his status
+	parameters:
+			 - LPVOID idx - guest idx on guest struct arr.
+	Returns: ret val - TRUE id succeded, ERR for error.
+	*/
+
 	char mode_out[4] = "OUT";
 	extern int day_counter;
 	extern guest_counter;

@@ -25,6 +25,13 @@ char **g_argv;
 
 int main(int argc, char *argv[])
 {
+	/*
+	Description: main. recieves user args and parse it to structs.
+	parameters:
+			 - int argc - num of args
+			 - char* argv[] - args
+	Returns: 0 if succeded
+	*/
 	extern Guest_struct guest_arr[MAX_NUM_OF_GUESTS];
 	extern int num_of_guests;
 	int wait_list = 0;
